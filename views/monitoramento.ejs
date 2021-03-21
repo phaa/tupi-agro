@@ -1,0 +1,200 @@
+<%- contentFor('body') %>
+
+<div class="row">
+  <div class="col-lg-4 col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-category">Controle de Irrigação</h5>
+        <h4 id="automaticIrrigationLabel" class="card-title automatic-control">Manual</h4>
+        <span id="automaticIrrigationToggle" class="toggle-switch">
+          <span class="toggle-knob"></span>
+        </span>
+      </div>
+      <div class="card-body">
+        <h5 id="irrigationLabel" style="display: inline-block;">Desligado</h5>
+        <span id="irrigationToggle" class="toggle-switch">
+          <span class="toggle-knob"></span>
+        </span>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4 col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-category">Controle de Fertirrigação</h5>
+        <h4 class="card-title automatic-control not-active-label">Manual</h4>
+        <span id="automaticFertirrigationToggle" class="toggle-switch not-active">
+          <span class="toggle-knob"></span>
+        </span>
+      </div>
+      <div class="card-body">
+        <h5 id="fertirrigationLabel" style="display: inline-block;">Desligado</h5>
+        <span id="fertirrigationToggle" class="toggle-switch">
+          <span class="toggle-knob"></span>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-12 col-md-12">
+    <div class="card card-chart">
+      <div class="card-header">
+        <h5 class="card-category"><b id="umidadeSolo"></b>%</h5>
+        <h4 class="card-title">Umidade do solo</h4>
+      </div>
+      <div class="card-body">
+        <div class="chart-area">
+          <canvas id="barChartSimpleGradientsNumbers"></canvas>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div class="stats">
+          <i class="now-ui-icons arrows-1_refresh-69"></i> Em tempo real
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-12 col-md-12">
+    <div class="card card-chart">
+      <div class="card-header">
+        <h5 class="card-category"><b id="temperaturaAr"></b>°C</h5>
+        <h4 class="card-title">Temperatura do ar</h4>
+      </div>
+      <div class="card-body">
+        <div class="chart-area">
+          <canvas id="lineChartExample"></canvas>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div class="stats">
+          <i class="now-ui-icons arrows-1_refresh-69"></i> Em tempo real
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-12 col-md-12">
+    <div class="card card-chart">
+      <div class="card-header">
+        <h5 class="card-category"><b id="umidadeAr"></b>%</h5>
+        <h4 class="card-title">Umidade do ar</h4>
+      </div>
+      <div class="card-body">
+        <div class="chart-area">
+          <canvas id="lineChartExampleWithNumbersAndGrid"></canvas>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div class="stats">
+          <i class="now-ui-icons arrows-1_refresh-69"></i> Em tempo real
+        </div>
+      </div>
+    </div>
+  </div>
+  
+</div>
+
+<script src="/socket.io/socket.io.js" charset="utf-8"></script>
+<script src="/js/realtime/analysis-charts.js"></script>
+<script>
+  $(document).ready(function() {
+
+    function refreshControlStates() {
+
+    }
+
+    function initControls() {
+      refreshControlStates();
+    }
+
+    // Add algoritmo para ler variaveis antes de iniciar lado do cliente (arduino tbm)
+    // Controle do lado do cliente
+    let automaticIrrigationStates = ["Manual", "Automático"];
+    let automaticIrrigationState = false;
+    let pumpStates = ["Desligado", "Ligado"];
+    let pumpState = false;
+    let fertirrigationState = false;
+
+    let automaticFertirrigationToggle = $("#automaticFertirrigationToggle");
+    let fertirrigationToggle = $("#fertirrigationToggle");
+    let fertirrigationLabel = $("#fertirrigationLabel");
+
+    let automaticIrrigationToggle = $("#automaticIrrigationToggle");
+    let automaticIrrigationLabel = $("#automaticIrrigationLabel");
+
+    let irrigationToggle = $("#irrigationToggle");
+    let irrigationLabel = $("#irrigationLabel");
+
+    automaticIrrigationToggle.on("click", function() {
+      $(this).toggleClass("active");
+      irrigationToggle.toggleClass("not-active");
+      irrigationLabel.toggleClass("not-active-label");
+      automaticIrrigationState = !automaticIrrigationState;
+      if (automaticIrrigationState) {
+        automaticIrrigationLabel.text(automaticIrrigationStates[1])
+      } else {
+        automaticIrrigationLabel.text(automaticIrrigationStates[0]);
+      }
+    });
+
+    irrigationToggle.on("click", function() {
+      $(this).toggleClass("active");
+      pumpState = !pumpState;
+      if (pumpState) {
+        irrigationLabel.text(pumpStates[1])
+        console.log('ligado')
+      } else {
+        irrigationLabel.text(pumpStates[0]);
+        console.log('desligado')
+      }
+    });
+
+    automaticFertirrigationToggle.on("click", function() {
+      $(this).toggleClass("active");
+      fertirrigationToggle.toggleClass("not-active");
+      fertirrigationLabel.toggleClass("not-active-label");
+    });
+
+    fertirrigationToggle.on("click", function() {
+      $(this).toggleClass("active");
+      fertirrigationState = !fertirrigationState;
+      if (fertirrigationState) {
+        fertirrigationLabel.text(pumpStates[1])
+        console.log('ligado')
+      } else {
+        fertirrigationLabel.text(pumpStates[0]);
+        console.log('desligado')
+      }
+    });
+
+    var socket = io();
+    //var form = document.getElementById('form');
+    //var input = document.getElementById('input');
+
+    /*form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      if (input.value) {
+        socket.emit('newData', input.value);
+        input.value = '';
+      }
+    });*/
+
+    socket.on('newData', function(data) {
+      const { soilMoisture, airTemp, airHumidity } = data;
+      addData(graficoTemperaturaAr, airTemp, airTemp);
+      addData(graficoUmidadeAr, airHumidity, airHumidity);
+      addData(graficoUmidadeSolo, soilMoisture, soilMoisture);
+      $('#umidadeSolo').text(soilMoisture);
+      $('#umidadeAr').text(airHumidity);
+      $('#temperaturaAr').text(airTemp);
+      console.log(data)
+      //var item = document.createElement('li');
+      //item.textContent = msg;
+      //messages.appendChild(item);
+      //window.scrollTo(0, document.body.scrollHeight);
+    });
+  });
+  
+  
+</script>

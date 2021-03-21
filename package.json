@@ -1,0 +1,36 @@
+{
+  "name": "tupi-agro",
+  "version": "1.0.0",
+  "description": "Greenhouse automation system",
+  "scripts": {
+    "start": "nodemon app",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "greenhouse",
+    "automation",
+    "arduino",
+    "IoT",
+    "Esp32"
+  ],
+  "author": "Pedro Azevedo",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.0.0",
+    "connect-flash": "^0.1.1",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "ejs": "^3.1.5",
+    "express": "^4.17.1",
+    "express-ejs-layouts": "^2.5.0",
+    "express-session": "^1.17.1",
+    "http-errors": "~1.6.3",
+    "mongoose": "^5.11.13",
+    "morgan": "~1.9.1",
+    "nodemon": "^2.0.7",
+    "passport": "^0.4.1",
+    "passport-local": "^1.0.0",
+    "socket.io": "^3.1.1",
+    "socket.io-client": "^3.1.1"
+  }
+}
