@@ -6,7 +6,7 @@ class MqttHandler {
     this.host = 'mqtt://broker.hivemq.com';
     //this.username = 'YOUR_USER'; // mqtt credentials if these are needed to connect
     //this.password = 'YOUR_PASSWORD';
-    this.socketIO = socketIO;
+    this.socket = socketIO;
   }
   
   connect() {
@@ -21,7 +21,7 @@ class MqttHandler {
 
     // Connection callback
     this.mqttClient.on('connect', () => {
-      console.log(`mqtt client connected`);
+      console.log(`Cliente MQTT conectado`);
     });
 
     // mqtt subscriptions
@@ -29,12 +29,14 @@ class MqttHandler {
     this.mqttClient.subscribe('tupi/agro/bomba'/*, {qos: 0}*/);
 
     // When a message arrives, console.log it
-    this.mqttClient.on('message', function (topic, message) {
+    this.mqttClient.on('message', (topic, message) => {
       console.log(topic.toString() + ": " + message.toString());
+      //console.log(this.socket);
+      this.socket.emit("newData", message);
     });
 
     this.mqttClient.on('close', () => {
-      console.log(`mqtt client disconnected`);
+      console.log(`Um cliente MQTT desconectou`);
     });
   }
 
@@ -47,4 +49,8 @@ class MqttHandler {
   }
 }
 
-module.exports = MqttHandler;
+module.exports = function(socketIO) {
+  //console.log("socket; " +socketIO);
+  const mqttClient = new MqttHandler(socketIO);
+  return mqttClient;
+};

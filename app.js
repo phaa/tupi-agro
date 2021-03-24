@@ -25,8 +25,8 @@ const io = require("socket.io")(server);
 require('./config/configure-socket-io')(io);
 
 // MQTT
-const mqttHandler = require("./config/configure-mqtt");
-const mqttClient = new mqttHandler(io);
+const mqttClient = require("./config/configure-mqtt")(io);
+//const mqttClient = new mqttHandler(io);
 mqttClient.connect();
 
   // Importação de rotas

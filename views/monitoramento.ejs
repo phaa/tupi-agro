@@ -182,13 +182,13 @@
 
     socket.on('newData', function(data) {
       const { soilMoisture, airTemp, airHumidity } = data;
-      addData(graficoTemperaturaAr, airTemp, airTemp);
-      addData(graficoUmidadeAr, airHumidity, airHumidity);
-      addData(graficoUmidadeSolo, soilMoisture, soilMoisture);
+      //addData(graficoTemperaturaAr, airTemp, airTemp);
+      //addData(graficoUmidadeAr, airHumidity, airHumidity);
+      //addData(graficoUmidadeSolo, soilMoisture, soilMoisture);
       $('#umidadeSolo').text(soilMoisture);
       $('#umidadeAr').text(airHumidity);
       $('#temperaturaAr').text(airTemp);
-      console.log(data)
+      console.log(soilMoisture)
       //var item = document.createElement('li');
       //item.textContent = msg;
       //messages.appendChild(item);
