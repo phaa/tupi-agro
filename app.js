@@ -22,12 +22,11 @@ const server = http.createServer(app);
 
 // Socket.io
 const io = require("socket.io")(server);
-require('./config/configure-socket-io')(io);
 
 // MQTT
-const mqttClient = require("./config/configure-mqtt")(io);
+const arduinoHandler = require("./config/arduino-handler")(io);
 //const mqttClient = new mqttHandler(io);
-mqttClient.connect();
+arduinoHandler.connect();
 
   // Importação de rotas
 const indexRouter = require('./routes/index');

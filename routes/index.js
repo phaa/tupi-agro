@@ -13,6 +13,7 @@ router.get('/register', (req, res) => {
 });
 
 router.get('/inicio', ensureAuthenticated, (req, res) => {
+  //console.log(req.user);
   res.render('inicio',{
     user: req.user,
     title: 'inicio',

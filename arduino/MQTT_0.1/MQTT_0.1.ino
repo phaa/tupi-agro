@@ -18,7 +18,7 @@
 
 // Config Sensor solo
 #define SOIL_SENSOR_PIN A0
-#define SOIL_MOISTURE_THRESHOLD 30 // Nível mínimo aceitável de umidade  
+#define SOIL_MOISTURE_THRESHOLD 50 // Nível mínimo aceitável de umidade 30% 
 #define MINIMUM_OPTIMAL_MOISTURE 70
 
 // Configs DHT11
@@ -31,11 +31,16 @@ dht DHT; //VARIÁVEL DO TIPO DHT
 
 //LCD
 LiquidCrystal_I2C lcd(0x27, 16, 2);
+short lcdState = 0;
 
 // Variáveis de controle
 byte pumpState = LOW;
+byte exaustingState = LOW;
 bool automaticIrrigation = true;
 bool realTimeAnalysis = true;
+short airHumidity = 0;
+short airTemperature = 0;
+short soilMoisture = 0;
 
 // Ethernet
 EthernetClient ethClient;
@@ -43,6 +48,8 @@ EthernetClient ethClient;
 // MQTT
 PubSubClient MQTT(ethClient);
 StaticJsonDocument<33> doc;
+StaticJsonDocument<33> doc2;
+char buffer[65];
 #define BROKER_MQTT "broker.hivemq.com" //URL do broker MQTT que se deseja utilizar
 #define BROKER_PORT 1883 // Porta do Broker MQTT
 #define TOPICO_ESTUFA "tupi/agro/estufa" //tópico MQTT de envio de informações para Broker
@@ -51,6 +58,7 @@ StaticJsonDocument<33> doc;
 #define ID_MQTT "TupiAgro_01" //id mqtt (para identificação de sessão)
 
 // Auxiliar para o contador
+unsigned long previousTime2s = 0;
 unsigned long previousTime5s = 0;
 unsigned long previousTime30min = 0;
 
@@ -67,6 +75,7 @@ void setup() {
 
   // Pino da bomba
   pinMode(PUMP_RELAY_PIN, OUTPUT);
+  digitalWrite(PUMP_RELAY_PIN, HIGH);
 
   // Métodos auxiliares
   initEthernet();
@@ -80,6 +89,11 @@ void setup() {
 void loop() {
   // Antes de fazer qualquer coisa verifica o status da conexão
   VerificaConexoes();
+
+  if ( millis() - previousTime2s >= 3000 ) {
+    manageLCD();
+    previousTime2s = millis();
+  }
 
   // A cada 10 segundos lê a estufa e atualiza os dados no display
   if ( millis() - previousTime5s >= 10000 ) {
@@ -96,9 +110,9 @@ void loop() {
     previousTime5s = millis();
   }
 
-  // A cada meia hora lê a estufa e manda os dados ao servidor
+  // A cada hora lê a estufa e manda os dados ao servidor
   if ( millis() - previousTime30min >= 3600000 ) {
-    DEBUG_PRINTLN("Hora de publicar 1min/true");
+    DEBUG_PRINTLN("Hora de publicar 1Hr/true");
     // Envia os dados ao servidor e armazena
     checkGreenhouse(true, true);
     previousTime30min = millis();
@@ -108,13 +122,76 @@ void loop() {
   MQTT.loop(); // Callback será executada automaticamente no decorrer do loop
 }
 
+void manageLCD() {
+  lcd.clear();
+  String displayMsg = "";
+  switch (lcdState) {
+    case 0:
+      //coluna, linha
+      lcd.setCursor(0, 0);
+      displayMsg = "Ar T:" + String(airTemperature) + "C";
+      lcd.print(displayMsg);
+    
+      lcd.setCursor(9, 0);
+      displayMsg = "U:" + String(airHumidity) + "%";
+      lcd.print(displayMsg);
+    
+      lcd.setCursor(0, 1);
+      displayMsg = "Solo T:" + String(airTemperature) + "%";
+      lcd.print(displayMsg);
+    
+      lcd.setCursor(11, 1);
+      displayMsg = "U:" + String(soilMoisture) + "%";
+      lcd.print(displayMsg);
+      break;
+    case 1:
+      lcd.setCursor(0, 0);
+      if (pumpState == HIGH) {
+        displayMsg = F("Irrigacao: ON");
+      } else {
+        displayMsg = F("Irrigacao: OFF");
+      }
+      lcd.print(displayMsg);
+      lcd.setCursor(0, 1);
+      if (exaustingState == HIGH) {
+        displayMsg = F("Exaustao: ON");
+      } else {
+        displayMsg = F("Exaustao: OFF");
+      }
+      lcd.print(displayMsg);
+      break;
+    case 2:
+      lcd.setCursor(0, 0);
+      if (!MQTT.connected()) {
+        displayMsg = F("Sistema: OFFLINE");
+      } else {
+        displayMsg = F("Sistema: ONLINE");
+      }
+      lcd.print(displayMsg);
+      lcd.setCursor(0, 1);
+      if (automaticIrrigation) {
+        displayMsg = F("IA: ON");
+      } else {
+        displayMsg = F("IA: OFF");
+      }
+      lcd.print(displayMsg);
+      break;
+  }
+  lcdState++;
+  // casos com a irrigacao manual/automatica
+  // casos com fertuirrigacao
+
+  if (lcdState == 3) {
+    lcdState = 0;
+  }
+}
+
 void checkGreenhouse(bool sendToServer, bool store) {
   DHT.read11(DHT11_PIN);
-  short airHumidity = round(DHT.humidity);
-  short airTemperature = round(DHT.temperature);
-  short soilMoisture = analogRead(SOIL_SENSOR_PIN);
-  Serial.println(soilMoisture);
-  soilMoisture = map(soilMoisture, 269, 632, 100, 0);
+  airHumidity = round(DHT.humidity);
+  airTemperature = round(DHT.temperature);
+  //a proxima leitura vai ser a média da anterior com essa
+  soilMoisture = map(analogRead(SOIL_SENSOR_PIN), 269, 632, 100, 0);
 
   // Normaliza a entrada do sensor
   if (soilMoisture > 100) {
@@ -123,24 +200,7 @@ void checkGreenhouse(bool sendToServer, bool store) {
     soilMoisture = 0;
   }
 
-  String displayMsg = "";
-  lcd.clear();   
-  //coluna, linha
-  lcd.setCursor(0, 0);
-  displayMsg = "Ar T:" + String(airTemperature)+"C";
-  lcd.print(displayMsg);
-  
-  lcd.setCursor(9, 0);
-  displayMsg = "U:" + String(airHumidity)+"%";
-  lcd.print(displayMsg);
-  
-  lcd.setCursor(0, 1);
-  displayMsg = "Solo T:" + String(airTemperature)+"%";
-  lcd.print(displayMsg);
-  
-  lcd.setCursor(11, 1);
-  displayMsg = "U:" + String(soilMoisture)+"%";
-  lcd.print(displayMsg);
+  manageLCD();
 
   // Só analiza os sensores caso a irrigação automática esteja ligada
   if (automaticIrrigation == true) {
@@ -158,25 +218,14 @@ void checkGreenhouse(bool sendToServer, bool store) {
     doc["soilMoisture"] = soilMoisture;
     doc["airTemp"] = airTemperature;
     doc["airHumidity"] = airHumidity;
-    DEBUG_PRINTLN("Send to server");
-    /*String jsonString = "{ \"soilMoisture\": \"" + String(soilMoisture) +
-                        "\", \"airTemp\": \"" + String(airTemperature) +
-                        "\", \"airHumidity\": \"" + String(airHumidity) + "\"";
-*/
+    
     if (store) {
       doc["store"] = true;
-      //jsonString += ", \"store\": \"true\" }";
     } else {
-      //jsonString += "}";
       doc["store"] = false;
     }
-    char buffer[65];
     size_t n = serializeJson(doc, buffer);
     MQTT.publish(TOPICO_ESTUFA, buffer, n);
-    //char attributes[70];
-    //jsonString.toCharArray( attributes, 70 );
-    // (lembrar) Retorna true ou false
-    //MQTT.publish( TOPICO_ESTUFA, attributes );
   }
 }
 
@@ -205,6 +254,9 @@ void callbackMQTT(char * topic, byte * payload, unsigned int length) {
 
   String topicString = String(topic);
 
+  Serial.println(msg);
+  Serial.println(topicString);
+
   if (topicString.equals(TOPICO_BOMBA)) {
     if (msg.equals("AI_ON")) {
       automaticIrrigation = true;
@@ -220,14 +272,24 @@ void callbackMQTT(char * topic, byte * payload, unsigned int length) {
     if (msg.equals("PUMP_OFF")) {
       setPumpState(LOW);
     }
-  }
-
+  } 
+  
   if (topicString.equals(TOPICO_ESTUFA)) {
     if (msg.equals("ANALYSIS_ON")) {
       realTimeAnalysis = true;
     }
     if (msg.equals("ANALYSIS_OFF")) {
       realTimeAnalysis = false;
+    }
+    if (msg.equals("GET_ARDUINO_STATE")) {
+      doc2["pump"] = pumpState;
+      doc2["exaust"] = exaustingState;
+      doc2["ia"] = automaticIrrigation;
+      size_t n = serializeJson(doc2, buffer);
+      MQTT.publish(TOPICO_ESTUFA, buffer, n);
+      //msg = String(pumpState)+","+String(exaustingState)+","+String(automaticIrrigation);
+      //MQTT.publish(TOPICO_ESTUFA, msg.toCharArray());
+      //Serial.println("GET_ARDUINO_STATE");
     }
     /*if (msg.equals("PUMP_ON")) {
       pumpState = HIGH;
@@ -250,14 +312,16 @@ void initEthernet() {
   // Configurações de endereço
   byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
   IPAddress ip(192, 168, 0, 177);
-  
+
   Ethernet.init(10);
   Ethernet.begin(mac, ip);
   //DEBUG_PRINTLN(Ethernet.hardwareStatus());
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {
     DEBUG_PRINTLN("(ETHERNET) Chipset ethernet não encontrado.");
     // Does nothing
-    for (;;) {;}
+    for (;;) {
+      ;
+    }
   }
 
   // Print the ethernet gateway
@@ -279,6 +343,7 @@ void connectMQTT() {
     if (MQTT.connect(ID_MQTT)) {
       DEBUG_PRINTLN("(BROKER) Conectado com sucesso ao broker MQTT.");
       MQTT.subscribe(TOPICO_BOMBA);
+      MQTT.subscribe(TOPICO_ESTUFA);
     } else {
       DEBUG_PRINTLN("(BROKER) Falha ao reconectar no broker.");
       DEBUG_PRINTLN("(BROKER) Haverá nova tentatica de conexao em 2s.");
