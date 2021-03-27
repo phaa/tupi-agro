@@ -50,11 +50,11 @@ PubSubClient MQTT(ethClient);
 StaticJsonDocument<33> doc;
 StaticJsonDocument<33> doc2;
 char buffer[65];
-#define BROKER_MQTT "broker.hivemq.com" //URL do broker MQTT que se deseja utilizar
-#define BROKER_PORT 1883 // Porta do Broker MQTT
-#define TOPICO_ESTUFA "tupi/agro/estufa" //tópico MQTT de envio de informações para Broker
-#define TOPICO_BOMBA "tupi/agro/bomba" //tópico MQTT de envio de informações para Broker
-#define TOPICO_FERTIRRIGACAO "tupi/agro/fertirrigacao" //tópico MQTT de envio de informações para Broker
+#define BROKER_MQTT "broker.hivemq.com"
+#define BROKER_PORT 1883 /
+#define TOPICO_ESTUFA "tupi/agro/estufa" 
+#define TOPICO_BOMBA "tupi/agro/bomba"
+#define TOPICO_FERTIRRIGACAO "tupi/agro/fertirrigacao" 
 #define ID_MQTT "TupiAgro_01" //id mqtt (para identificação de sessão)
 
 // Auxiliar para o contador
@@ -192,6 +192,7 @@ void checkGreenhouse(bool sendToServer, bool store) {
   airTemperature = round(DHT.temperature);
   //a proxima leitura vai ser a média da anterior com essa
   soilMoisture = map(analogRead(SOIL_SENSOR_PIN), 269, 632, 100, 0);
+  //Agua: 305 Ar: 682
 
   // Normaliza a entrada do sensor
   if (soilMoisture > 100) {
