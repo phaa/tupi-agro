@@ -38,12 +38,17 @@ byte pumpState = LOW;
 byte exaustingState = LOW;
 bool automaticIrrigation = true;
 bool realTimeAnalysis = true;
+bool mqttStatus = false;
 short airHumidity = 0;
 short airTemperature = 0;
 short soilMoisture = 0;
 
 // Ethernet
+#define ETHERNET_CS_PIN 10
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+IPAddress ip(192, 168, 0, 177);
 EthernetClient ethClient;
+
 
 // MQTT
 PubSubClient MQTT(ethClient);
@@ -51,7 +56,7 @@ StaticJsonDocument<33> doc;
 StaticJsonDocument<33> doc2;
 char buffer[65];
 #define BROKER_MQTT "broker.hivemq.com"
-#define BROKER_PORT 1883 /
+#define BROKER_PORT 1883 
 #define TOPICO_ESTUFA "tupi/agro/estufa" 
 #define TOPICO_BOMBA "tupi/agro/bomba"
 #define TOPICO_FERTIRRIGACAO "tupi/agro/fertirrigacao" 
@@ -59,70 +64,9 @@ char buffer[65];
 
 // Auxiliar para o contador
 unsigned long previousTime2s = 0;
-unsigned long previousTime5s = 0;
 unsigned long previousTime30min = 0;
 
-void setup() {
-  Serial.begin(9600);
-
-  // Config LCD
-  lcd.init();
-  lcd.setBacklight(HIGH);
-  lcd.setCursor(0, 0);
-  lcd.print(F("Tupi Agro"));
-  lcd.setCursor(0, 1);
-  lcd.print(F("Inicializando..."));
-
-  // Pino da bomba
-  pinMode(PUMP_RELAY_PIN, OUTPUT);
-  digitalWrite(PUMP_RELAY_PIN, HIGH);
-
-  // Métodos auxiliares
-  initEthernet();
-  initMQTT();
-  connectMQTT();
-
-  lcd.setCursor(0, 1);
-  lcd.print(F("Sistema Online"));
-}
-
-void loop() {
-  // Antes de fazer qualquer coisa verifica o status da conexão
-  VerificaConexoes();
-
-  if ( millis() - previousTime2s >= 3000 ) {
-    manageLCD();
-    previousTime2s = millis();
-  }
-
-  // A cada 10 segundos lê a estufa e atualiza os dados no display
-  if ( millis() - previousTime5s >= 10000 ) {
-    if (realTimeAnalysis) {
-      // Monitoramento em tempo real ligado
-      DEBUG_PRINTLN("Hora de publicar 5s/true");
-      checkGreenhouse(true, false);
-    } else {
-      // Monitoramento desligado
-      DEBUG_PRINTLN("Hora de publicar 5s/false");
-      checkGreenhouse(false, false);
-    }
-
-    previousTime5s = millis();
-  }
-
-  // A cada hora lê a estufa e manda os dados ao servidor
-  if ( millis() - previousTime30min >= 3600000 ) {
-    DEBUG_PRINTLN("Hora de publicar 1Hr/true");
-    // Envia os dados ao servidor e armazena
-    checkGreenhouse(true, true);
-    previousTime30min = millis();
-  }
-
-  // Keep-alive da comunicação com broker MQTT
-  MQTT.loop(); // Callback será executada automaticamente no decorrer do loop
-}
-
-void manageLCD() {
+void refreshLCD() {
   lcd.clear();
   String displayMsg = "";
   switch (lcdState) {
@@ -146,44 +90,23 @@ void manageLCD() {
       break;
     case 1:
       lcd.setCursor(0, 0);
-      if (pumpState == HIGH) {
-        displayMsg = F("Irrigacao: ON");
-      } else {
-        displayMsg = F("Irrigacao: OFF");
-      }
+      displayMsg = (pumpState) ? F("Irrigacao: ON") : F("Irrigacao: OFF");
       lcd.print(displayMsg);
       lcd.setCursor(0, 1);
-      if (exaustingState == HIGH) {
-        displayMsg = F("Exaustao: ON");
-      } else {
-        displayMsg = F("Exaustao: OFF");
-      }
+      displayMsg = (exaustingState) ? F("Exaustao: ON") : F("Exaustao: OFF");
       lcd.print(displayMsg);
       break;
     case 2:
       lcd.setCursor(0, 0);
-      if (!MQTT.connected()) {
-        displayMsg = F("Sistema: OFFLINE");
-      } else {
-        displayMsg = F("Sistema: ONLINE");
-      }
+      displayMsg = (mqttStatus) ? F("Sistema: ONLINE") : F("Sistema: OFFLINE");
       lcd.print(displayMsg);
       lcd.setCursor(0, 1);
-      if (automaticIrrigation) {
-        displayMsg = F("IA: ON");
-      } else {
-        displayMsg = F("IA: OFF");
-      }
+      displayMsg = (automaticIrrigation) ? F("IA: ON") : F("IA: OFF");
       lcd.print(displayMsg);
       break;
   }
-  lcdState++;
-  // casos com a irrigacao manual/automatica
-  // casos com fertuirrigacao
 
-  if (lcdState == 3) {
-    lcdState = 0;
-  }
+  lcdState = (lcdState => 3) ? 0 : lcdState+1;
 }
 
 void checkGreenhouse(bool sendToServer, bool store) {
@@ -201,8 +124,6 @@ void checkGreenhouse(bool sendToServer, bool store) {
     soilMoisture = 0;
   }
 
-  manageLCD();
-
   // Só analiza os sensores caso a irrigação automática esteja ligada
   if (automaticIrrigation == true) {
     if (soilMoisture < SOIL_MOISTURE_THRESHOLD) {
@@ -210,39 +131,57 @@ void checkGreenhouse(bool sendToServer, bool store) {
     } else if (soilMoisture >= MINIMUM_OPTIMAL_MOISTURE || pumpState == LOW) {
       setPumpState(LOW);
     }
-  } else {
-    setPumpState(pumpState);
   }
 
-  // Se for o momento do publicar
   if (sendToServer) {
+    // prepara o pacote JSON para o servidor
     doc["soilMoisture"] = soilMoisture;
     doc["airTemp"] = airTemperature;
     doc["airHumidity"] = airHumidity;
-    
-    if (store) {
-      doc["store"] = true;
-    } else {
-      doc["store"] = false;
-    }
+    doc["store"] = (store) ? true : false;
     size_t n = serializeJson(doc, buffer);
     MQTT.publish(TOPICO_ESTUFA, buffer, n);
   }
 }
 
 // Em breve colocar identificador da bomba
-void setPumpState(int state) {
-  if (state == HIGH) {
+void setPumpState(byte state) {
+  if (state) {
     // Relés ligados
     digitalWrite(PUMP_RELAY_PIN, LOW);
     pumpState = HIGH;
     MQTT.publish(TOPICO_BOMBA, "PUMP_ON_OK");
-  } else if (state == LOW) {
+  } else {
     // Relés desligados
     digitalWrite(PUMP_RELAY_PIN, HIGH);
     pumpState = LOW;
     MQTT.publish(TOPICO_BOMBA, "PUMP_OFF_OK");
   }
+}
+
+void initEthernet() {
+  // Initializing Ethernet
+  DEBUG_PRINTLN("(ETHERNET) Iniciando módulo ethernet.");
+
+  Ethernet.init(ETHERNET_CS_PIN);
+  Ethernet.begin(mac, ip);
+  //DEBUG_PRINTLN(Ethernet.hardwareStatus());
+  if (Ethernet.hardwareStatus() == EthernetNoHardware) {
+    DEBUG_PRINTLN("(ETHERNET) Chipset ethernet não encontrado.");
+    // Does nothing
+    for (;;) {;}
+  }
+
+  // Print the ethernet gateway
+  DEBUG_PRINT("(ETHERNET) Gateway IP: ");
+  DEBUG_PRINTLN(Ethernet.gatewayIP());
+
+  // Print your local IP address:
+  DEBUG_PRINT("(ETHERNET) IP obtido: ");
+  DEBUG_PRINTLN(Ethernet.localIP());
+
+  // Print Ethernet OK
+  DEBUG_PRINTLN("(ETHERNET) Ethernet carregado com sucesso.");
 }
 
 void callbackMQTT(char * topic, byte * payload, unsigned int length) {
@@ -254,9 +193,6 @@ void callbackMQTT(char * topic, byte * payload, unsigned int length) {
   }
 
   String topicString = String(topic);
-
-  Serial.println(msg);
-  Serial.println(topicString);
 
   if (topicString.equals(TOPICO_BOMBA)) {
     if (msg.equals("AI_ON")) {
@@ -288,16 +224,7 @@ void callbackMQTT(char * topic, byte * payload, unsigned int length) {
       doc2["ia"] = automaticIrrigation;
       size_t n = serializeJson(doc2, buffer);
       MQTT.publish(TOPICO_ESTUFA, buffer, n);
-      //msg = String(pumpState)+","+String(exaustingState)+","+String(automaticIrrigation);
-      //MQTT.publish(TOPICO_ESTUFA, msg.toCharArray());
-      //Serial.println("GET_ARDUINO_STATE");
     }
-    /*if (msg.equals("PUMP_ON")) {
-      pumpState = HIGH;
-      }
-      if (msg.equals("PUMP_OFF")) {
-      pumpState = HIGH;
-      }*/
   }
 }
 
@@ -306,58 +233,78 @@ void initMQTT() {
   MQTT.setCallback(callbackMQTT); //atribui função de callback (função chamada quando qualquer informação de um dos tópicos subescritos chega)
 }
 
-void initEthernet() {
-  // Initializing Ethernet
-  DEBUG_PRINTLN("(ETHERNET) Iniciando módulo ethernet.");
-
-  // Configurações de endereço
-  byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-  IPAddress ip(192, 168, 0, 177);
-
-  Ethernet.init(10);
-  Ethernet.begin(mac, ip);
-  //DEBUG_PRINTLN(Ethernet.hardwareStatus());
-  if (Ethernet.hardwareStatus() == EthernetNoHardware) {
-    DEBUG_PRINTLN("(ETHERNET) Chipset ethernet não encontrado.");
-    // Does nothing
-    for (;;) {
-      ;
-    }
-  }
-
-  // Print the ethernet gateway
-  DEBUG_PRINT("(ETHERNET) Gateway IP: ");
-  DEBUG_PRINTLN(Ethernet.gatewayIP());
-
-  // Print your local IP address:
-  DEBUG_PRINT("(ETHERNET) IP obtido: ");
-  DEBUG_PRINTLN(Ethernet.localIP());
-
-  // Print Ethernet OK
-  DEBUG_PRINTLN("(ETHERNET) Ethernet carregado com sucesso.");
-}
-
 void connectMQTT() {
-  while (!MQTT.connected()) {
-    DEBUG_PRINT("(BROKER) Tentando se conectar ao Broker MQTT: ");
-    DEBUG_PRINTLN(BROKER_MQTT);
-    if (MQTT.connect(ID_MQTT)) {
-      DEBUG_PRINTLN("(BROKER) Conectado com sucesso ao broker MQTT.");
-      MQTT.subscribe(TOPICO_BOMBA);
-      MQTT.subscribe(TOPICO_ESTUFA);
-    } else {
-      DEBUG_PRINTLN("(BROKER) Falha ao reconectar no broker.");
-      DEBUG_PRINTLN("(BROKER) Haverá nova tentatica de conexao em 2s.");
-      delay(1000);
+  if (Ethernet.linkStatus() == LinkON) {
+    Serial.println("Link ON");
+    while (!MQTT.connected()) {
+      if (MQTT.connect(ID_MQTT)) {
+        MQTT.subscribe(TOPICO_BOMBA);
+        MQTT.subscribe(TOPICO_ESTUFA);
+      } else {
+        delay(2000);
+      }
     }
+  } else {
+    // Para o programa aqui
+    initEthernet();
   }
 }
 
-void VerificaConexoes(void) {
+void checkCommunication(void) {
   if (!MQTT.connected()) {
     connectMQTT(); //se não há conexão com o Broker, a conexão é refeita
   }
-  if (Ethernet.linkStatus() == LinkOFF) {
-    initEthernet(); // se a conexão ethernet caiu, reconecta
+}
+
+void setup() {
+  Serial.begin(9600);
+
+  // Config LCD
+  lcd.init();
+  lcd.setBacklight(HIGH);
+  lcd.setCursor(0, 0);
+  lcd.print(F("Tupi Agro"));
+  lcd.setCursor(0, 1);
+  lcd.print(F("Inicializando..."));
+
+  // Pino da bomba
+  pinMode(PUMP_RELAY_PIN, OUTPUT);
+  digitalWrite(PUMP_RELAY_PIN, HIGH);
+
+  // Métodos auxiliares
+  initEthernet();
+  initMQTT();
+  connectMQTT();
+
+  lcd.setCursor(0, 1);
+  lcd.print(F("Sistema Online"));
+}
+
+void loop() {
+  // Antes de fazer qualquer coisa verifica o status da conexão
+  checkCommunication();
+
+  if ( millis() - previousTime2s >= 2000 ) {
+    if (realTimeAnalysis) {
+      // Monitoramento em tempo real ligado
+      DEBUG_PRINTLN("Hora de publicar 5s/true");
+      checkGreenhouse(true, false);
+    } else {
+      // Monitoramento desligado
+      DEBUG_PRINTLN("Hora de publicar 5s/false");
+      checkGreenhouse(false, false);
+    }
+    previousTime2s = millis();
   }
+
+  // A cada hora lê a estufa e manda os dados ao servidor
+  if ( millis() - previousTime30min >= 3600000 ) {
+    DEBUG_PRINTLN("Hora de publicar 1Hr/true");
+    // Envia os dados ao servidor e armazena
+    checkGreenhouse(true, true);
+    previousTime30min = millis();
+  }
+
+  // Keep-alive da comunicação com broker MQTT
+  MQTT.loop(); // Callback será executada automaticamente no decorrer do loop
 }
