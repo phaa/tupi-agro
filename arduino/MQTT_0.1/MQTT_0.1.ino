@@ -66,99 +66,6 @@ char buffer[65];
 unsigned long previousTime2s = 0;
 unsigned long previousTime30min = 0;
 
-void refreshLCD() {
-  lcd.clear();
-  String displayMsg = "";
-  switch (lcdState) {
-    case 0:
-      //coluna, linha
-      lcd.setCursor(0, 0);
-      displayMsg = "Ar T:" + String(airTemperature) + "C";
-      lcd.print(displayMsg);
-    
-      lcd.setCursor(9, 0);
-      displayMsg = "U:" + String(airHumidity) + "%";
-      lcd.print(displayMsg);
-    
-      lcd.setCursor(0, 1);
-      displayMsg = "Solo T:" + String(airTemperature) + "%";
-      lcd.print(displayMsg);
-    
-      lcd.setCursor(11, 1);
-      displayMsg = "U:" + String(soilMoisture) + "%";
-      lcd.print(displayMsg);
-      break;
-    case 1:
-      lcd.setCursor(0, 0);
-      displayMsg = (pumpState) ? F("Irrigacao: ON") : F("Irrigacao: OFF");
-      lcd.print(displayMsg);
-      lcd.setCursor(0, 1);
-      displayMsg = (exaustingState) ? F("Exaustao: ON") : F("Exaustao: OFF");
-      lcd.print(displayMsg);
-      break;
-    case 2:
-      lcd.setCursor(0, 0);
-      displayMsg = (mqttStatus) ? F("Sistema: ONLINE") : F("Sistema: OFFLINE");
-      lcd.print(displayMsg);
-      lcd.setCursor(0, 1);
-      displayMsg = (automaticIrrigation) ? F("IA: ON") : F("IA: OFF");
-      lcd.print(displayMsg);
-      break;
-  }
-
-  lcdState = (lcdState => 3) ? 0 : lcdState+1;
-}
-
-void checkGreenhouse(bool sendToServer, bool store) {
-  DHT.read11(DHT11_PIN);
-  airHumidity = round(DHT.humidity);
-  airTemperature = round(DHT.temperature);
-  //a proxima leitura vai ser a média da anterior com essa
-  soilMoisture = map(analogRead(SOIL_SENSOR_PIN), 269, 632, 100, 0);
-  //Agua: 305 Ar: 682
-
-  // Normaliza a entrada do sensor
-  if (soilMoisture > 100) {
-    soilMoisture = 100;
-  } else if (soilMoisture < 0) {
-    soilMoisture = 0;
-  }
-
-  // Só analiza os sensores caso a irrigação automática esteja ligada
-  if (automaticIrrigation == true) {
-    if (soilMoisture < SOIL_MOISTURE_THRESHOLD) {
-      setPumpState(HIGH);
-    } else if (soilMoisture >= MINIMUM_OPTIMAL_MOISTURE || pumpState == LOW) {
-      setPumpState(LOW);
-    }
-  }
-
-  if (sendToServer) {
-    // prepara o pacote JSON para o servidor
-    doc["soilMoisture"] = soilMoisture;
-    doc["airTemp"] = airTemperature;
-    doc["airHumidity"] = airHumidity;
-    doc["store"] = (store) ? true : false;
-    size_t n = serializeJson(doc, buffer);
-    MQTT.publish(TOPICO_ESTUFA, buffer, n);
-  }
-}
-
-// Em breve colocar identificador da bomba
-void setPumpState(byte state) {
-  if (state) {
-    // Relés ligados
-    digitalWrite(PUMP_RELAY_PIN, LOW);
-    pumpState = HIGH;
-    MQTT.publish(TOPICO_BOMBA, "PUMP_ON_OK");
-  } else {
-    // Relés desligados
-    digitalWrite(PUMP_RELAY_PIN, HIGH);
-    pumpState = LOW;
-    MQTT.publish(TOPICO_BOMBA, "PUMP_OFF_OK");
-  }
-}
-
 void initEthernet() {
   // Initializing Ethernet
   DEBUG_PRINTLN("(ETHERNET) Iniciando módulo ethernet.");
@@ -256,8 +163,104 @@ void checkCommunication(void) {
   }
 }
 
+void refreshLCD() {
+  lcd.clear();
+  String displayMsg = "";
+  switch (lcdState) {
+    case 0:
+      //coluna, linha
+      lcd.setCursor(0, 0);
+      displayMsg = "Ar T:" + String(airTemperature) + "C";
+      lcd.print(displayMsg);
+    
+      lcd.setCursor(9, 0);
+      displayMsg = "U:" + String(airHumidity) + "%";
+      lcd.print(displayMsg);
+    
+      lcd.setCursor(0, 1);
+      displayMsg = "Solo U:" + String(soilMoisture) + "%";
+      lcd.print(displayMsg);
+    
+      lcd.setCursor(11, 1);
+      displayMsg = "U:" + String(analogRead(SOIL_SENSOR_PIN)) + "%";
+      lcd.print(displayMsg);
+      break;
+    case 1:
+      lcd.setCursor(0, 0);
+      displayMsg = (pumpState) ? F("Irrigacao: ON") : F("Irrigacao: OFF");
+      lcd.print(displayMsg);
+      lcd.setCursor(0, 1);
+      displayMsg = (exaustingState) ? F("Exaustao: ON") : F("Exaustao: OFF");
+      lcd.print(displayMsg);
+      break;
+    case 2:
+      lcd.setCursor(0, 0);
+      displayMsg = (mqttStatus) ? F("Sistema: ONLINE") : F("Sistema: OFFLINE");
+      lcd.print(displayMsg);
+      lcd.setCursor(0, 1);
+      displayMsg = (automaticIrrigation) ? F("IA: ON") : F("IA: OFF");
+      lcd.print(displayMsg);
+      break;
+  }
+
+  lcdState = (lcdState >= 3) ? 0 : lcdState+1;
+}
+
+// Em breve colocar identificador da bomba
+void setPumpState(byte state) {
+  if (state) {
+    // Relés ligados
+    digitalWrite(PUMP_RELAY_PIN, LOW);
+    pumpState = HIGH;
+    MQTT.publish(TOPICO_BOMBA, "PUMP_ON_OK");
+  } else {
+    // Relés desligados
+    digitalWrite(PUMP_RELAY_PIN, HIGH);
+    pumpState = LOW;
+    MQTT.publish(TOPICO_BOMBA, "PUMP_OFF_OK");
+  }
+}
+
+void checkGreenhouse(bool sendToServer, bool store) {
+  DHT.read11(DHT11_PIN);
+  airHumidity = round(DHT.humidity);
+  airTemperature = round(DHT.temperature);
+  //a proxima leitura vai ser a média da anterior com essa
+  soilMoisture = map(analogRead(SOIL_SENSOR_PIN), 305, 682, 100, 0);
+  // novo Agua: 305 Ar: 682
+  // antigo 269, 632
+
+  //Serial.println(analogRead(SOIL_SENSOR_PIN));
+
+  // Normaliza a entrada do sensor
+  if (soilMoisture > 100) {
+    soilMoisture = 100;
+  } else if (soilMoisture < 0) {
+    soilMoisture = 0;
+  }
+
+  // Só analiza os sensores caso a irrigação automática esteja ligada
+  if (automaticIrrigation == true) {
+    if (soilMoisture < SOIL_MOISTURE_THRESHOLD) {
+      setPumpState(HIGH);
+    } else if (soilMoisture >= MINIMUM_OPTIMAL_MOISTURE || pumpState == LOW) {
+      setPumpState(LOW);
+    }
+  }
+
+  if (sendToServer) {
+    // prepara o pacote JSON para o servidor
+    doc["soilMoisture"] = soilMoisture;
+    doc["airTemp"] = airTemperature;
+    doc["airHumidity"] = airHumidity;
+    doc["store"] = (store) ? true : false;
+    size_t n = serializeJson(doc, buffer);
+    MQTT.publish(TOPICO_ESTUFA, buffer, n);
+  }
+}
+
 void setup() {
-  Serial.begin(9600);
+  //Serial.begin(9600);
 
   // Config LCD
   lcd.init();
@@ -270,11 +273,12 @@ void setup() {
   // Pino da bomba
   pinMode(PUMP_RELAY_PIN, OUTPUT);
   digitalWrite(PUMP_RELAY_PIN, HIGH);
-
+  //Serial.println("Acabou pinos");
   // Métodos auxiliares
   initEthernet();
   initMQTT();
   connectMQTT();
+  //Serial.println("Conectou");
 
   lcd.setCursor(0, 1);
   lcd.print(F("Sistema Online"));
@@ -294,6 +298,7 @@ void loop() {
       DEBUG_PRINTLN("Hora de publicar 5s/false");
       checkGreenhouse(false, false);
     }
+    refreshLCD();
     previousTime2s = millis();
   }
 
