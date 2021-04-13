@@ -226,7 +226,7 @@ void checkGreenhouse(bool sendToServer, bool store) {
   airHumidity = round(DHT.humidity);
   airTemperature = round(DHT.temperature);
   //a proxima leitura vai ser a média da anterior com essa
-  soilMoisture = map(analogRead(SOIL_SENSOR_PIN), 305, 682, 100, 0);
+  soilMoisture = map(analogRead(SOIL_SENSOR_PIN), 269, 632, 100, 0);
   // novo Agua: 305 Ar: 682
   // antigo 269, 632
 
