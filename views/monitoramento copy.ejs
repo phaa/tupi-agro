@@ -1,8 +1,41 @@
 <%- contentFor('body') %>
-<div id="like_button_container"></div>
 
-  
-  
+<div class="row">
+  <div class="col-lg-4 col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-category">Controle de Irrigação</h5>
+        <h4 id="automaticIrrigationLabel" class="card-title automatic-control">Manual</h4>
+        <span id="automaticIrrigationToggle" class="toggle-switch">
+          <span class="toggle-knob"></span>
+        </span>
+      </div>
+      <div class="card-body">
+        <h5 id="irrigationLabel" style="display: inline-block;">Desligado</h5>
+        <span id="irrigationToggle" class="toggle-switch">
+          <span class="toggle-knob"></span>
+        </span>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4 col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-category">Controle de Fertirrigação</h5>
+        <h4 class="card-title automatic-control not-active-label">Manual</h4>
+        <span id="automaticFertirrigationToggle" class="toggle-switch not-active">
+          <span class="toggle-knob"></span>
+        </span>
+      </div>
+      <div class="card-body">
+        <h5 id="fertirrigationLabel" style="display: inline-block;">Desligado</h5>
+        <span id="fertirrigationToggle" class="toggle-switch">
+          <span class="toggle-knob"></span>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="row">
   <div class="col-lg-12 col-md-12">
@@ -63,15 +96,65 @@
 </div>
 
 <script src="/socket.io/socket.io.js" charset="utf-8"></script>
-<script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
-<script src="/js/iot_c/like_button.js"></script>
+<script src="/js/realtime/analysis-charts.js"></script>
 <script>
-chartColor = "#FFFFFF";
+  chartColor = "#FFFFFF";
 
 // General configuration for the charts with Line gradientStroke
+gradientChartOptionsConfiguration = {
+  maintainAspectRatio: false,
+  legend: {
+    display: false
+  },
+  tooltips: {
+    bodySpacing: 4,
+    mode: "nearest",
+    intersect: 0,
+    position: "nearest",
+    xPadding: 10,
+    yPadding: 10,
+    caretPadding: 10
+  },
+  responsive: 1,
+  scales: {
+    yAxes: [{
+      display: 0,
+      gridLines: 0,
+      ticks: {
+        display: false
+      },
+      gridLines: {
+        zeroLineColor: "transparent",
+        drawTicks: false,
+        display: false,
+        drawBorder: false
+      }
+    }],
+    xAxes: [{
+      display: 0,
+      gridLines: 0,
+      ticks: {
+        display: false
+      },
+      gridLines: {
+        zeroLineColor: "transparent",
+        drawTicks: false,
+        display: false,
+        drawBorder: false
+      }
+    }]
+  },
+  layout: {
+    padding: {
+      left: 0,
+      right: 0,
+      top: 15,
+      bottom: 15
+    }
+  }
+};
 
-chartConfiguration = {
+gradientChartOptionsConfigurationWithNumbersAndGrid = {
   maintainAspectRatio: false,
   legend: {
     display: false
@@ -136,7 +219,7 @@ let graficoUmidadeSolo = new Chart(ctx, {
   type: 'line',
   responsive: true,
   data: {
-    labels: [0, ],
+    labels: [0,],
     datasets: [{
       label: "Umidade (%)",
       borderColor: "#18ce0f",
@@ -149,10 +232,10 @@ let graficoUmidadeSolo = new Chart(ctx, {
       fill: true,
       backgroundColor: gradientFill,
       borderWidth: 2,
-      data: [0, ]
+      data: [0,]
     }]
   },
-  options: chartConfiguration
+  options: gradientChartOptionsConfigurationWithNumbersAndGrid
 });
 
 // Umidade do ar
@@ -186,7 +269,7 @@ let graficoUmidadeAr = new Chart(ctx, {
       data: [0,]
     }]
   },
-  options: chartConfiguration
+  options: gradientChartOptionsConfigurationWithNumbersAndGrid
 });
 
 // Temperatura do ar
@@ -221,7 +304,7 @@ let graficoTemperaturaAr = new Chart(ctx, {
       data: [0,]
     }]
   },
-  options: chartConfiguration
+  options: gradientChartOptionsConfigurationWithNumbersAndGrid
 });
 
 
