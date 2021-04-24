@@ -6,7 +6,7 @@
 #include <ArduinoJson.h>
 
 // Debug
-//#define DEBUG
+#define DEBUG
 #ifdef DEBUG
 #define DEBUG_PRINT(x)  Serial.print (x)
 #define DEBUG_PRINTLN(x)  Serial.println (x)
@@ -16,12 +16,12 @@
 #endif
 
 // Config Sensor solo
-#define SOIL_SENSOR_PIN 35
+#define SOIL_SENSOR_PIN 34
 #define SOIL_MOISTURE_THRESHOLD 50 // Nível mínimo aceitável de umidade 30% 
 #define MINIMUM_OPTIMAL_MOISTURE 70
 
 // Configs DHT11
-# define DHT11_PIN 34
+# define DHT11_PIN 21
 dht DHT; 
 
 #define SSID "Tupi"
@@ -30,13 +30,13 @@ WiFiClient espClient;
 
 // Pensar no estado dela em caso de falta de energia
 // Relés
-# define PUMP_RELAY_PIN 16
+# define PUMP_RELAY_PIN 4
 
 // MQTT
 PubSubClient MQTT(espClient);
-StaticJsonDocument<33> doc;
-StaticJsonDocument<33> doc2;
-char buffer[65];
+StaticJsonDocument<66> doc;
+StaticJsonDocument<66> doc2;
+char buffer[130];
 #define BROKER_MQTT "broker.hivemq.com"
 #define BROKER_PORT 1883 
 #define TOPICO_ESTUFA "tupi/agro/estufa" 
@@ -63,7 +63,7 @@ unsigned long previousTime2s = 0;
 unsigned long previousTime30min = 0;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   // Config LCD
   lcd.init();
@@ -73,18 +73,23 @@ void setup() {
   lcd.setCursor(0, 1);
   lcd.print(F("Inicializando..."));
 
+  // Pinos adc
+  pinMode(SOIL_SENSOR_PIN, INPUT);
+  //analogReadResolution(11); // Default of 12 is not very linear. Recommended to use 10 or 11 depending on needed resolution.
+  //analogSetAttenuation(ADC_6db); // Default is 11db which is very noisy. Recommended to use 2.5 or 6.
+
   // Pino da bomba
   pinMode(PUMP_RELAY_PIN, OUTPUT);
   digitalWrite(PUMP_RELAY_PIN, HIGH);
-  //Serial.println("Acabou pinos");
+  
   // Métodos auxiliares
   initWifi();
   initMQTT();
   connectMQTT();
-  //Serial.println("Conectou");
 
   lcd.setCursor(0, 1);
   lcd.print(F("Sistema Online"));
+  delay(100);
 }
 
 void loop() {
@@ -96,7 +101,8 @@ void loop() {
       // Monitoramento em tempo real ligado
       DEBUG_PRINTLN("Hora de publicar 5s/true");
       checkGreenhouse(true, false);
-    } else {
+    } 
+    else {
       // Monitoramento desligado
       DEBUG_PRINTLN("Hora de publicar 5s/false");
       checkGreenhouse(false, false);

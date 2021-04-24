@@ -1,4 +1,6 @@
 const mqtt = require('mqtt');
+const StateManager = require('./stateManager');
+const stateManager = require('./stateManager');
 
 class ArduinoHandler {
   constructor(socketIO) {
@@ -8,6 +10,7 @@ class ArduinoHandler {
     //this.password = 'YOUR_PASSWORD';
     this.socket = socketIO;
     this.socketSetup();
+    this.stateManager = new StateManager();
   }
   
   connect() {
@@ -43,12 +46,22 @@ class ArduinoHandler {
         this.socket.emit("newData", {soilMoisture, airTemp, airHumidity});
       }
 
-      // Resultado de GET_ARDUINO_STATE
-      if(message.startsWith("{\"pump")) {
+      // Resultado de GET_MEASUREMENTS
+      if(message.startsWith("{\"boot")) {
         const obj = JSON.parse(message);
-        let { pump, exaust, ia } = obj;
-        console.log("initControls " + message.toString());
-        this.socket.emit("initControls", { pumpState: pump, exaustState: exaust, aiState: ia });
+        let { boot, pump, exaust, fert } = obj;
+        console.log("onBooting " + message.toString());
+
+        //get states from states Handler
+
+        this.socket.emit("onBooting", { 
+          aiState: 1, 
+          pumpState: pump, 
+          aeState: 1, 
+          exaustState: exaust,
+          afState: 1,
+          fertState: fert 
+        });
       }
 
       // Resultado de AI_ON, AI_OFF

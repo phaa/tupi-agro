@@ -11,9 +11,9 @@ class ControlsManager extends React.Component {
   }
 
   configureSocketIO() {
-    // Requisita o estado atual do arduino para atualizar a UI
-    this.socketIO.emit("messageToArduino", {topic: "tupi/agro/estufa", message: "GET_ARDUINO_STATE"});
-    this.socketIO.on('initControls', function(data) {
+    // Boot
+    this.socketIO.emit("messageToArduino", {topic: "tupi/agro/estufa", message: "GET_MEASUREMENTS"});
+    this.socketIO.on('onBooting', (data) => {
       console.log("ai " + data.aiState)
       console.log("pump " + data.pumpState)
     });
@@ -22,8 +22,9 @@ class ControlsManager extends React.Component {
   render() {
     return (
       <div className="row">
-        <Card cardTitle={"Controle de Irrigação"} socketIO={this.socketIO}/>
-        <Card cardTitle={"Controle de Fertirrigação"} socketIO={this.socketIO} />
+        <Card cardTitle={"Controle de Irrigação"} socketIO={this.socketIO} automaticPrefix={"AI"} prefix2={"PUMP"} />
+        <Card cardTitle={"Controle de Exaustão"} socketIO={this.socketIO} automaticPrefix={"AE"} prefix2={"EXAUST"} />
+        <Card cardTitle={"Controle de Fertirrigação"} socketIO={this.socketIO} automaticPrefix={"AF"} prefix2={"FERT"} />
       </div>
     );
   }
@@ -35,12 +36,21 @@ class Card extends React.Component {
     super(props);
     this.state = { 
       firstActive: false, 
-      secondActive: false, 
-      texts1: ["Automático", "Manual"], 
-      texts2: ["Ligado", "Desligado"] 
+      secondActive: false
     };
 
     this.socketIO = props.socketIO;
+    this.automaticPrefixes = {
+      on: props.automaticPrefix + "_ON",
+      off: props.automaticPrefix + "_OFF",
+    };
+    this.prefixes2 = {
+      on: props.prefix2 + "_ON",
+      off: props.prefix2 + "_OFF",
+    };
+
+    this.texts1 = ["Automático", "Manual"]; 
+    this.texts2 = ["Ligado", "Desligado"];
 
     this.toggleFirstState = this.toggleFirstState.bind(this);
     this.toggleSecondState = this.toggleSecondState.bind(this);
@@ -48,27 +58,27 @@ class Card extends React.Component {
 
   toggleFirstState() {
     this.setState({ firstActive: !this.state.firstActive });
-    if (!this.state.firstActive) {
-      this.socketIO.emit("messageToArduino", {topic: "tupi/agro/bomba", message: "AI_ON"});
-    } else {
-      this.socketIO.emit("messageToArduino", {topic: "tupi/agro/bomba", message: "AI_OFF"});
-    }
+    let payload = {
+      topic: "tupi/agro/bomba",
+      message: (!this.state.firstActive) ? this.automaticPrefixes.on : this.automaticPrefixes.off
+    };
+    this.socketIO.emit("messageToArduino", payload);
   }
 
   toggleSecondState() {
     this.setState({ secondActive: !this.state.secondActive });
-    if (!this.state.secondActive) {
-      this.socketIO.emit("messageToArduino", {topic: "tupi/agro/bomba", message: "PUMP_ON"});
-    } else {
-      this.socketIO.emit("messageToArduino", {topic: "tupi/agro/bomba", message: "PUMP_OFF"});
-    }
+    let payload = {
+      topic: "tupi/agro/bomba",
+      message: (!this.state.secondActive) ? this.prefixes2.on : this.prefixes2.off
+    };
+    this.socketIO.emit("messageToArduino", payload);
   }
 
   returnLabelText(index, bool) {
     if(index == 1) {
-      return bool ? this.state.texts1[0] : this.state.texts1[1];
+      return bool ? this.texts1[0] : this.texts1[1];
     } else if(index == 2) {
-      return bool ? this.state.texts2[0] : this.state.texts2[1];
+      return bool ? this.texts2[0] : this.texts2[1];
     }
   }
 
@@ -95,5 +105,6 @@ class Card extends React.Component {
     );
   }
 }
+
 
 ReactDOM.render(<ControlsManager />,document.getElementById('like_button_container'));

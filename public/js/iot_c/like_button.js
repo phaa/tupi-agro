@@ -26,9 +26,9 @@ var ControlsManager = function (_React$Component) {
   _createClass(ControlsManager, [{
     key: "configureSocketIO",
     value: function configureSocketIO() {
-      // Requisita o estado atual do arduino para atualizar a UI
-      this.socketIO.emit("messageToArduino", { topic: "tupi/agro/estufa", message: "GET_ARDUINO_STATE" });
-      this.socketIO.on('initControls', function (data) {
+      // Boot
+      this.socketIO.emit("messageToArduino", { topic: "tupi/agro/estufa", message: "GET_MEASUREMENTS" });
+      this.socketIO.on('onBooting', function (data) {
         console.log("ai " + data.aiState);
         console.log("pump " + data.pumpState);
       });
@@ -39,8 +39,9 @@ var ControlsManager = function (_React$Component) {
       return React.createElement(
         "div",
         { className: "row" },
-        React.createElement(Card, { cardTitle: "Controle de Irrigação", socketIO: this.socketIO }),
-        React.createElement(Card, { cardTitle: "Controle de Fertirrigação", socketIO: this.socketIO })
+        React.createElement(Card, { cardTitle: "Controle de Irrigação", socketIO: this.socketIO, automaticPrefix: "AI", prefix2: "PUMP" }),
+        React.createElement(Card, { cardTitle: "Controle de Exaustão", socketIO: this.socketIO, automaticPrefix: "AE", prefix2: "EXAUST" }),
+        React.createElement(Card, { cardTitle: "Controle de Fertirrigação", socketIO: this.socketIO, automaticPrefix: "AF", prefix2: "FERT" })
       );
     }
   }]);
@@ -58,12 +59,21 @@ var Card = function (_React$Component2) {
 
     _this2.state = {
       firstActive: false,
-      secondActive: false,
-      texts1: ["Automático", "Manual"],
-      texts2: ["Ligado", "Desligado"]
+      secondActive: false
     };
 
     _this2.socketIO = props.socketIO;
+    _this2.automaticPrefixes = {
+      on: props.automaticPrefix + "_ON",
+      off: props.automaticPrefix + "_OFF"
+    };
+    _this2.prefixes2 = {
+      on: props.prefix2 + "_ON",
+      off: props.prefix2 + "_OFF"
+    };
+
+    _this2.texts1 = ["Automático", "Manual"];
+    _this2.texts2 = ["Ligado", "Desligado"];
 
     _this2.toggleFirstState = _this2.toggleFirstState.bind(_this2);
     _this2.toggleSecondState = _this2.toggleSecondState.bind(_this2);
@@ -74,29 +84,29 @@ var Card = function (_React$Component2) {
     key: "toggleFirstState",
     value: function toggleFirstState() {
       this.setState({ firstActive: !this.state.firstActive });
-      if (!this.state.firstActive) {
-        this.socketIO.emit("messageToArduino", { topic: "tupi/agro/bomba", message: "AI_ON" });
-      } else {
-        this.socketIO.emit("messageToArduino", { topic: "tupi/agro/bomba", message: "AI_OFF" });
-      }
+      var payload = {
+        topic: "tupi/agro/bomba",
+        message: !this.state.firstActive ? this.automaticPrefixes.on : this.automaticPrefixes.off
+      };
+      this.socketIO.emit("messageToArduino", payload);
     }
   }, {
     key: "toggleSecondState",
     value: function toggleSecondState() {
       this.setState({ secondActive: !this.state.secondActive });
-      if (!this.state.secondActive) {
-        this.socketIO.emit("messageToArduino", { topic: "tupi/agro/bomba", message: "PUMP_ON" });
-      } else {
-        this.socketIO.emit("messageToArduino", { topic: "tupi/agro/bomba", message: "PUMP_OFF" });
-      }
+      var payload = {
+        topic: "tupi/agro/bomba",
+        message: !this.state.secondActive ? this.prefixes2.on : this.prefixes2.off
+      };
+      this.socketIO.emit("messageToArduino", payload);
     }
   }, {
     key: "returnLabelText",
     value: function returnLabelText(index, bool) {
       if (index == 1) {
-        return bool ? this.state.texts1[0] : this.state.texts1[1];
+        return bool ? this.texts1[0] : this.texts1[1];
       } else if (index == 2) {
-        return bool ? this.state.texts2[0] : this.state.texts2[1];
+        return bool ? this.texts2[0] : this.texts2[1];
       }
     }
   }, {
