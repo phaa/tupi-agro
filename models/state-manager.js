@@ -55,11 +55,4 @@ StateManager.countDocuments({}, (err, count) => {
     });
   }
 });
-// Executado apenas uma vez
-//const count = StateManager.find().estimatedDocumentCount();
-//console.log(count);
-
-
-
-
 module.exports = StateManager;

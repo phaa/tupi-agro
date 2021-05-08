@@ -24,7 +24,7 @@ const server = http.createServer(app);
 const io = require("socket.io")(server);
 
 // MQTT
-const arduinoHandler = require("./config/arduino-handler")(io);
+const boardController = require("./config/board-controller")(io);
 //const mqttClient = new mqttHandler(io);
 
   // Importação de rotas
@@ -39,9 +39,69 @@ const passportConfigure = require('./config/passport')(passport);
 // Banco de dados
 const mongoStarter = require('./database/mongo-connection');
 
+
+// Verifica se a porta passada é uma string e garante o retorno de um Int
+const normalizePort = (val) => {
+  const port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+  return false;
+}
+
+/**
+ * Listener para erros no server
+ */
+const onError = (error) => {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  const bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // Manipula erros específicos com mensagens humanas
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Listener para quando o server iniciar
+ */
+const onListening = () => {
+  const addr = server.address();
+  const bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'porta ' + addr.port;
+  debug('Esperando na ' + bind);
+  console.log('Esperando na ' + bind);
+}
+
+/**
+ * Inicializadora do servidor assíncrona
+ * Espera a inicializaçâo e conexão do Mongo para prosseguir
+ */
 async function main() {
   await mongoStarter.connect('pedro', 'mclaren2018', 'estufas');
-  arduinoHandler.connect();
+  boardController.setup();
   
   // Configuraçâo das views 
   app.set('views', path.join(__dirname, 'views'));
@@ -107,62 +167,4 @@ async function main() {
   server.on('listening', onListening);
 }
 
-function normalizePort(val) {
-  const port = parseInt(val, 10);
-
-  if (isNaN(port)) {
-    // named pipe
-    return val;
-  }
-
-  if (port >= 0) {
-    // port number
-    return port;
-  }
-
-  return false;
-}
-
-/**
- * Listener para erros no server
- */
-
-function onError(error) {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
-
-  const bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
-
-  // handle specific listen errors with friendly messages
-  switch (error.code) {
-    case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
-}
-
-/**
- * Listener para quando o server iniciar
- */
-
-function onListening() {
-  const addr = server.address();
-  const bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'porta ' + addr.port;
-  debug('Esperando na ' + bind);
-  console.log('Esperando na ' + bind);
-}
-
-//module.exports = app;
 main();

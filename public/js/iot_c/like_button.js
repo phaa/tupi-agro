@@ -27,11 +27,7 @@ var ControlsManager = function (_React$Component) {
     key: "configureSocketIO",
     value: function configureSocketIO() {
       // Boot
-      this.socketIO.emit("messageToArduino", { topic: "tupi/agro/estufa", message: "GET_MEASUREMENTS" });
-      this.socketIO.on('onBooting', function (data) {
-        console.log("ai " + data.aiState);
-        console.log("pump " + data.pumpState);
-      });
+      this.socketIO.emit("pageLoading", "");
     }
   }, {
     key: "render",
@@ -77,28 +73,42 @@ var Card = function (_React$Component2) {
 
     _this2.toggleFirstState = _this2.toggleFirstState.bind(_this2);
     _this2.toggleSecondState = _this2.toggleSecondState.bind(_this2);
+
+    _this2.socketIO.on('onGreenhouseCheck', function (data) {
+      var _JSON$parse = JSON.parse(data),
+          pumpState = _JSON$parse.pumpState,
+          exaustingState = _JSON$parse.exaustingState,
+          fertirrigationState = _JSON$parse.fertirrigationState,
+          airHumidity = _JSON$parse.airHumidity,
+          airTemperature = _JSON$parse.airTemperature,
+          soilMoisture = _JSON$parse.soilMoisture;
+      // procura saber quais sao os prefixos do card
+      // verifica por quais topicos ele atende
+
+
+      if (_this2.prefixes2 == 0) {}
+    });
     return _this2;
   }
+
+  // Automatic Inteligence
+
 
   _createClass(Card, [{
     key: "toggleFirstState",
     value: function toggleFirstState() {
       this.setState({ firstActive: !this.state.firstActive });
-      var payload = {
-        topic: "tupi/agro/bomba",
-        message: !this.state.firstActive ? this.automaticPrefixes.on : this.automaticPrefixes.off
-      };
-      this.socketIO.emit("messageToArduino", payload);
+      var message = !this.state.firstActive ? this.automaticPrefixes.on : this.automaticPrefixes.off;
+      // emitir para o backend
+      //this.socketIO.emit("onToggleTool_r", message);
     }
   }, {
     key: "toggleSecondState",
     value: function toggleSecondState() {
       this.setState({ secondActive: !this.state.secondActive });
-      var payload = {
-        topic: "tupi/agro/bomba",
-        message: !this.state.secondActive ? this.prefixes2.on : this.prefixes2.off
-      };
-      this.socketIO.emit("messageToArduino", payload);
+      var message = !this.state.secondActive ? this.prefixes2.on : this.prefixes2.off;
+      // emitir para o backend e MCU
+      this.socketIO.emit("requestToggleTool", message);
     }
   }, {
     key: "returnLabelText",

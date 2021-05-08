@@ -98,6 +98,16 @@ void callbackMQTT(char * topic, byte * payload, unsigned int length) {
   } 
   
   if (topicString.equals(TOPICO_ESTUFA)) {
+    if (msg.equals("EXAUST_ON")) {
+      exaustingState = HIGH;
+      //digitalWrite(EXAUST_RELAY_PIN, LOW);
+      MQTT.publish(TOPICO_BOMBA, "AI_ON_OK");
+    }
+    if (msg.equals("EXAUST_OFF")) {
+      exaustingState = LOW;
+      //digitalWrite(EXAUST_RELAY_PIN, HIGH);
+      MQTT.publish(TOPICO_BOMBA, "AI_OFF_OK");
+    }
     /*if (msg.equals("ANALYSIS_ON")) {
       realTimeAnalysis = true;
     }

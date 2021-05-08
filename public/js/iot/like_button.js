@@ -12,11 +12,9 @@ class ControlsManager extends React.Component {
 
   configureSocketIO() {
     // Boot
-    this.socketIO.emit("messageToArduino", {topic: "tupi/agro/estufa", message: "GET_MEASUREMENTS"});
-    this.socketIO.on('onBooting', (data) => {
-      console.log("ai " + data.aiState)
-      console.log("pump " + data.pumpState)
-    });
+    this.socketIO.emit("pageLoading", "");
+    
+    
   }
 
   render() {
@@ -54,24 +52,30 @@ class Card extends React.Component {
 
     this.toggleFirstState = this.toggleFirstState.bind(this);
     this.toggleSecondState = this.toggleSecondState.bind(this);
+
+    this.socketIO.on('onGreenhouseCheck', (data) => {
+      let { pumpState, exaustingState, fertirrigationState, airHumidity, airTemperature, soilMoisture } = JSON.parse(data);
+      // procura saber quais sao os prefixos do card
+      // verifica por quais topicos ele atende
+      if (this.prefixes2 == 0) {
+
+      }
+    });
   }
 
+  // Automatic Inteligence
   toggleFirstState() {
     this.setState({ firstActive: !this.state.firstActive });
-    let payload = {
-      topic: "tupi/agro/bomba",
-      message: (!this.state.firstActive) ? this.automaticPrefixes.on : this.automaticPrefixes.off
-    };
-    this.socketIO.emit("messageToArduino", payload);
+    let message = (!this.state.firstActive) ? this.automaticPrefixes.on : this.automaticPrefixes.off;
+    // emitir para o backend
+    //this.socketIO.emit("onToggleTool_r", message);
   }
 
   toggleSecondState() {
     this.setState({ secondActive: !this.state.secondActive });
-    let payload = {
-      topic: "tupi/agro/bomba",
-      message: (!this.state.secondActive) ? this.prefixes2.on : this.prefixes2.off
-    };
-    this.socketIO.emit("messageToArduino", payload);
+    let message = (!this.state.secondActive) ? this.prefixes2.on : this.prefixes2.off;
+    // emitir para o backend e MCU
+    this.socketIO.emit("requestToggleTool", message);
   }
 
   returnLabelText(index, bool) {

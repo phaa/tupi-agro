@@ -2,7 +2,7 @@ const mqtt = require('mqtt');
 const StateManager = require('./stateManager');
 const stateManager = require('./stateManager');
 
-class ArduinoHandler {
+class ArduinoHandler { // mudar para comunication manager
   constructor(socketIO) {
     this.mqttClient = null;
     this.host = 'mqtt://broker.hivemq.com';
@@ -44,6 +44,7 @@ class ArduinoHandler {
         let { soilMoisture, airTemp, airHumidity } = obj;
         //console.log(`${soilMoisture} : ${airTemp} : ${airHumidity}`);
         this.socket.emit("newData", {soilMoisture, airTemp, airHumidity});
+        this.stateManager.readGreenhouseParams(soilMoisture, airTemp, airHumidity, true);
       }
 
       // Resultado de GET_MEASUREMENTS
@@ -101,6 +102,11 @@ class ArduinoHandler {
       socket1.on('messageToArduino', args => {
         console.log("to_arduino " + args.topic + ":" + args.message);
         this.mqttClient.publish(args.topic, args.message);
+      });
+
+      socket1.on('onSocket', args => {
+        console.log("onSocket " + args);
+        //socket1.emit("confirmEsp", { state: true });
       });
     });
   }

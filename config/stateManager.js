@@ -1,10 +1,10 @@
-const StateManagerMongoose = require('../models/state-manager');
+const StateManagerModel = require('../models/state-manager');
 
 class StateManager {
   constructor() {
     this.soilMoistureThreshold = 50;
     this.minimalOptimalSoilMoisture = 80;
-    StateManagerMongoose.findOne().sort({created_at: 1}).exec((err, result) => {
+    StateManagerModel.findOne().sort({created_at: 1}).exec((err, result) => {
       this.stateManager = result;
       console.log(`StateManagerORM resultado: ${this.stateManager}`);
     });
@@ -12,7 +12,7 @@ class StateManager {
 
   readGreenhouseParams(params) {
     const { soilMoisture, airTemp, airHumidity, store } = params;
-    if (automaticIrrigation == true) {
+    if (this.stateManager.auto_irrigation == false) { //default true
       if (soilMoisture < this.soilMoistureThreshold) {
         console.log("bomba ON");
       } 

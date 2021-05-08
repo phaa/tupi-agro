@@ -1,9 +1,5 @@
 <%- contentFor('body') %>
 <div id="like_button_container"></div>
-
-  
-  
-
 <div class="row">
   <div class="col-lg-12 col-md-12">
     <div class="card card-chart">
@@ -243,58 +239,6 @@ function addData(chart, label, data) {
     // Solicita os dados do arduino ao servidor
     socket.emit("messageToArduino", {topic: "tupi/agro/estufa", message: "GET_ARDUINO_STATE"});
 
-    // Add algoritmo para ler variaveis antes de iniciar lado do cliente (arduino tbm)
-    // Controle do lado do cliente
-    let automaticIrrigationStates = ["Manual", "Automático"];
-    let automaticIrrigationState = false;
-    let irrigationStates = ["Desligado", "Ligado"];
-    let irrigationState = false;
-    let fertirrigationState = false;
-
-    let automaticFertirrigationToggle = $("#automaticFertirrigationToggle");
-    let fertirrigationToggle = $("#fertirrigationToggle");
-    let fertirrigationLabel = $("#fertirrigationLabel");
-
-    let automaticIrrigationToggle = $("#automaticIrrigationToggle");
-    let automaticIrrigationLabel = $("#automaticIrrigationLabel");
-
-    let irrigationToggle = $("#irrigationToggle");
-    let irrigationLabel = $("#irrigationLabel");
-
-    function changeUI(data) {
-      // Toggles da IA
-      if(data.aiState == true) {
-        automaticIrrigationToggle.addClass('active');
-        irrigationToggle.addClass("not-active");
-        irrigationLabel.addClass("not-active-label");
-        automaticIrrigationLabel.text(automaticIrrigationStates[1]);
-        automaticIrrigationState = true;
-      } else if(data.aiState == false) {
-        automaticIrrigationToggle.removeClass('active');
-        irrigationToggle.removeClass("not-active");
-        irrigationLabel.removeClass("not-active-label");
-        automaticIrrigationLabel.text(automaticIrrigationStates[0]);
-        automaticIrrigationState = false;
-      }
-
-      // Toggles da irrigação
-      if(data.pumpState == true) {
-        irrigationToggle.addClass('active');
-        irrigationLabel.text(irrigationStates[1]);
-        irrigationState = true;
-      } else if(data.pumpState == false) {
-        irrigationToggle.removeClass('active');
-        irrigationLabel.text(irrigationStates[0]);
-        irrigationState = false;
-      }
-    }
-
-    socket.on('initControls', function(data) {
-      changeUI(data);
-      console.log("ai " + data.aiState)
-      console.log("pump " + data.pumpState)
-    });
-
     socket.on('newData', function(data) {
       const { soilMoisture, airTemp, airHumidity } = data;
       addData(graficoTemperaturaAr, airTemp, airTemp);
@@ -315,51 +259,7 @@ function addData(chart, label, data) {
       console.log("Confirm UI")
     });
 
-    //Listeners da UI
-    automaticIrrigationToggle.on("click", function() {
-      automaticIrrigationState = !automaticIrrigationState;
-      if (automaticIrrigationState) {
-        socket.emit("messageToArduino", {topic: "tupi/agro/bomba", message: "AI_ON"});
-      } else {
-        socket.emit("messageToArduino", {topic: "tupi/agro/bomba", message: "AI_OFF"});
-      }
-    });
-
-    irrigationToggle.on("click", function() {
-      irrigationState = !irrigationState;
-      if (irrigationState) {
-        socket.emit("messageToArduino", {topic: "tupi/agro/bomba", message: "PUMP_ON"});
-      } else {
-        socket.emit("messageToArduino", {topic: "tupi/agro/bomba", message: "PUMP_OFF"});
-      }
-    });
-
-    automaticFertirrigationToggle.on("click", function() {
-      $(this).toggleClass("active");
-      fertirrigationToggle.toggleClass("not-active");
-      fertirrigationLabel.toggleClass("not-active-label");
-    });
-
-    fertirrigationToggle.on("click", function() {
-      $(this).toggleClass("active");
-      fertirrigationState = !fertirrigationState;
-      if (fertirrigationState) {
-        fertirrigationLabel.text(irrigationStates[1])
-        console.log('ligado')
-      } else {
-        fertirrigationLabel.text(irrigationStates[0]);
-        console.log('desligado')
-      }
-    });
-
-
-    /*socket.on('changeirrigationState', function(data) {
-      if(data.irrigationState) {
-        irrigationToggle.addClass('active');
-      } else {
-        irrigationToggle.removeClass('active');
-      }
-    });*/
+    
   });
   
   
