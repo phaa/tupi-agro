@@ -16,28 +16,184 @@ var ControlsManager = function (_React$Component) {
 
     var _this = _possibleConstructorReturn(this, (ControlsManager.__proto__ || Object.getPrototypeOf(ControlsManager)).call(this, props));
 
-    _this.socketIO = io();
-    _this.state = { socket: _this.socketIO };
-    _this.configureSocketIO = _this.configureSocketIO.bind(_this);
-    _this.configureSocketIO();
+    _this.state = {
+      alive: false,
+      pumpState: 0,
+      automaticIrrigation: 0,
+      exaustingState: 0,
+      automaticExausting: 0,
+      fertirrigationState: 0,
+      automaticFertirrigation: 0,
+      airHumidity: 0,
+      airTemperature: 0,
+      soilMoisture: 0
+    };
+
+    _this.setIntervals = _this.setIntervals.bind(_this);
+    _this.getGreenhouseData = _this.getGreenhouseData.bind(_this);
+    _this.unpackGreenhouseData = _this.unpackGreenhouseData.bind(_this);
+
+    _this.togglePump = _this.togglePump.bind(_this);
+    _this.toggleExaust = _this.toggleExaust.bind(_this);
+    _this.toggleFertirrigation = _this.toggleFertirrigation.bind(_this);
+
+    _this.toggleAutomaticIrrigation = _this.toggleAutomaticIrrigation.bind(_this);
+    _this.toggleAutomaticExausting = _this.toggleAutomaticExausting.bind(_this);
+    _this.toggleAutomaticFertirrigation = _this.toggleAutomaticFertirrigation.bind(_this);
+
+    _this.getGreenhouseData();
+    _this.setIntervals();
     return _this;
   }
 
   _createClass(ControlsManager, [{
-    key: "configureSocketIO",
-    value: function configureSocketIO() {
-      // Boot
-      this.socketIO.emit("pageLoading", "");
+    key: 'setIntervals',
+    value: function setIntervals() {
+      var _this2 = this;
+
+      // Atualização em tempo real dos dados da estufa
+      // posso colocar no esp para retornar os dados da estufa como resposta aos commands
+      // para isso eu crio uma função para mandar os dados, para assim reaproveitar o código
+      setInterval(function () {
+        _this2.getGreenhouseData();
+      }, 2000);
     }
   }, {
-    key: "render",
+    key: 'unpackGreenhouseData',
+    value: function unpackGreenhouseData(data) {
+      this.setState({
+        // adicionar alive = false em caso de erro no esp
+        alive: true,
+        pumpState: data.pumpState,
+        automaticIrrigation: data.automaticIrrigation,
+        exaustingState: data.exaustingState,
+        automaticExausting: data.automaticExausting,
+        fertirrigationState: data.fertirrigationState,
+        automaticFertirrigation: data.automaticFertirrigation,
+        airHumidity: data.airHumidity,
+        airTemperature: data.airTemperature,
+        soilMoisture: data.soilMoisture
+      });
+    }
+  }, {
+    key: 'getGreenhouseData',
+    value: function getGreenhouseData(data) {
+      var _this3 = this;
+
+      if (data) {
+        this.unpackGreenhouseData(data);
+        console.log(data);
+      } else {
+        // pega pelo axios
+        axios.get('http://192.168.0.108/greenhouse').then(function (res) {
+          var data = res.data;
+          _this3.unpackGreenhouseData(data);
+          document.body.classList.add('loaded');
+        });
+      }
+    }
+  }, {
+    key: 'toggleAutomaticIrrigation',
+    value: function toggleAutomaticIrrigation(state) {
+      var _this4 = this;
+
+      if (state) {
+        state = 1;
+      } else {
+        state = 0;
+      }
+      //this.setState({ automaticIrrigation: state });
+      axios.get('http://192.168.0.108/command?automaticIrrigation=' + state).then(function (res) {
+        _this4.getGreenhouseData(res.data);
+      });
+    }
+  }, {
+    key: 'toggleAutomaticExausting',
+    value: function toggleAutomaticExausting(state) {
+      var _this5 = this;
+
+      if (state) {
+        state = 1;
+      } else {
+        state = 0;
+      }
+      //this.setState({ automaticExausting: state });
+      axios.get('http://192.168.0.108/command?automaticExausting=' + state).then(function (res) {
+        _this5.getGreenhouseData(res.data);
+      });
+    }
+  }, {
+    key: 'toggleAutomaticFertirrigation',
+    value: function toggleAutomaticFertirrigation(state) {
+      var _this6 = this;
+
+      if (state) {
+        state = 1;
+      } else {
+        state = 0;
+      }
+      //this.setState({ automaticFertirrigation: state });
+      axios.get('http://192.168.0.108/command?automaticFertirrigation=' + state).then(function (res) {
+        _this6.getGreenhouseData(res.data);
+      });
+    }
+  }, {
+    key: 'togglePump',
+    value: function togglePump(state) {
+      var _this7 = this;
+
+      if (state) {
+        state = 1;
+      } else {
+        state = 0;
+      }
+      axios.get('http://192.168.0.108/command?pump=' + state).then(function (res) {
+        _this7.getGreenhouseData(res.data);
+      });
+    }
+  }, {
+    key: 'toggleExaust',
+    value: function toggleExaust(state) {
+      var _this8 = this;
+
+      if (state) {
+        state = 1;
+      } else {
+        state = 0;
+      }
+      axios.get('http://192.168.0.108/command?exaust=' + state).then(function (res) {
+        _this8.getGreenhouseData(res.data);
+      });
+    }
+  }, {
+    key: 'toggleFertirrigation',
+    value: function toggleFertirrigation(state) {
+      var _this9 = this;
+
+      if (state) {
+        state = 1;
+      } else {
+        state = 0;
+      }
+      axios.get('http://192.168.0.108/command?fertirrigation=' + state).then(function (res) {
+        _this9.getGreenhouseData(res.data);
+      });
+    }
+  }, {
+    key: 'render',
     value: function render() {
       return React.createElement(
-        "div",
-        { className: "row" },
-        React.createElement(Card, { cardTitle: "Controle de Irrigação", socketIO: this.socketIO, automaticPrefix: "AI", prefix2: "PUMP" }),
-        React.createElement(Card, { cardTitle: "Controle de Exaustão", socketIO: this.socketIO, automaticPrefix: "AE", prefix2: "EXAUST" }),
-        React.createElement(Card, { cardTitle: "Controle de Fertirrigação", socketIO: this.socketIO, automaticPrefix: "AF", prefix2: "FERT" })
+        'div',
+        { className: 'row' },
+        React.createElement(Card, { cardTitle: "Controle de Irrigação",
+          toggleFlag1: this.state.automaticIrrigation, callback1: this.toggleAutomaticIrrigation,
+          toggleFlag2: this.state.pumpState, callback2: this.togglePump }),
+        React.createElement(Card, { cardTitle: "Controle de Exaustão",
+          toggleFlag1: this.state.automaticExausting, callback1: this.toggleAutomaticExausting,
+          toggleFlag2: this.state.exaustingState, callback2: this.toggleExaust }),
+        React.createElement(Card, { cardTitle: "Controle de Fertirrigação",
+          toggleFlag1: this.state.automaticFertirrigation, callback1: this.toggleAutomaticFertirrigation,
+          toggleFlag2: this.state.fertirrigationState, callback2: this.toggleFertirrigation })
       );
     }
   }]);
@@ -51,118 +207,86 @@ var Card = function (_React$Component2) {
   function Card(props) {
     _classCallCheck(this, Card);
 
-    var _this2 = _possibleConstructorReturn(this, (Card.__proto__ || Object.getPrototypeOf(Card)).call(this, props));
+    var _this10 = _possibleConstructorReturn(this, (Card.__proto__ || Object.getPrototypeOf(Card)).call(this, props));
 
-    _this2.state = {
-      firstActive: false,
-      secondActive: false
-    };
+    _this10.texts1 = ["Automático", "Manual"];
+    _this10.texts2 = ["Ligado", "Desligado"];
 
-    _this2.socketIO = props.socketIO;
-    _this2.automaticPrefixes = {
-      on: props.automaticPrefix + "_ON",
-      off: props.automaticPrefix + "_OFF"
-    };
-    _this2.prefixes2 = {
-      on: props.prefix2 + "_ON",
-      off: props.prefix2 + "_OFF"
-    };
-
-    _this2.texts1 = ["Automático", "Manual"];
-    _this2.texts2 = ["Ligado", "Desligado"];
-
-    _this2.toggleFirstState = _this2.toggleFirstState.bind(_this2);
-    _this2.toggleSecondState = _this2.toggleSecondState.bind(_this2);
-
-    _this2.socketIO.on('onGreenhouseCheck', function (data) {
-      var _JSON$parse = JSON.parse(data),
-          pumpState = _JSON$parse.pumpState,
-          exaustingState = _JSON$parse.exaustingState,
-          fertirrigationState = _JSON$parse.fertirrigationState,
-          airHumidity = _JSON$parse.airHumidity,
-          airTemperature = _JSON$parse.airTemperature,
-          soilMoisture = _JSON$parse.soilMoisture;
-      // procura saber quais sao os prefixos do card
-      // verifica por quais topicos ele atende
-
-
-      if (_this2.prefixes2 == 0) {}
-    });
-    return _this2;
+    _this10.toggleFirstState = _this10.toggleFirstState.bind(_this10);
+    _this10.toggleSecondState = _this10.toggleSecondState.bind(_this10);
+    return _this10;
   }
 
   // Automatic Inteligence
 
 
   _createClass(Card, [{
-    key: "toggleFirstState",
+    key: 'toggleFirstState',
     value: function toggleFirstState() {
-      this.setState({ firstActive: !this.state.firstActive });
-      var message = !this.state.firstActive ? this.automaticPrefixes.on : this.automaticPrefixes.off;
+      var bool = !this.props.toggleFlag1;
+      this.props.callback1(bool);
       // emitir para o backend
-      //this.socketIO.emit("onToggleTool_r", message);
     }
   }, {
-    key: "toggleSecondState",
+    key: 'toggleSecondState',
     value: function toggleSecondState() {
-      this.setState({ secondActive: !this.state.secondActive });
-      var message = !this.state.secondActive ? this.prefixes2.on : this.prefixes2.off;
-      // emitir para o backend e MCU
-      this.socketIO.emit("requestToggleTool", message);
+      var bool = !this.props.toggleFlag2;
+      this.props.callback2(bool);
     }
   }, {
-    key: "returnLabelText",
-    value: function returnLabelText(index, bool) {
-      if (index == 1) {
-        return bool ? this.texts1[0] : this.texts1[1];
-      } else if (index == 2) {
-        return bool ? this.texts2[0] : this.texts2[1];
-      }
+    key: 'returnFirstLabel',
+    value: function returnFirstLabel(bool) {
+      return bool ? this.texts1[0] : this.texts1[1];
     }
   }, {
-    key: "render",
+    key: 'returnSecondLabel',
+    value: function returnSecondLabel(bool) {
+      return bool ? this.texts2[0] : this.texts2[1];
+    }
+  }, {
+    key: 'render',
     value: function render() {
-      var _state = this.state,
-          firstActive = _state.firstActive,
-          secondActive = _state.secondActive;
+      var _props = this.props,
+          toggleFlag1 = _props.toggleFlag1,
+          toggleFlag2 = _props.toggleFlag2;
 
       return React.createElement(
-        "div",
-        { className: "col-lg-4 col-md-4" },
+        'div',
+        { className: 'col-lg-4 col-md-4' },
         React.createElement(
-          "div",
-          { className: "card" },
+          'div',
+          { className: 'card' },
           React.createElement(
-            "div",
-            { className: "card-header" },
+            'div',
+            { className: 'card-header' },
             React.createElement(
-              "h5",
-              { className: "card-category" },
+              'h5',
+              { className: 'card-category' },
               this.props.cardTitle
             ),
             React.createElement(
-              "h4",
-              { className: "card-title automatic-control" },
-              this.returnLabelText(1, firstActive)
+              'h4',
+              { className: 'card-title automatic-control' },
+              this.returnFirstLabel(toggleFlag1)
             ),
             React.createElement(
-              "span",
-              { className: "toggle-switch " + (firstActive ? 'active' : ''), onClick: this.toggleFirstState },
-              React.createElement("span", { className: "toggle-knob" })
+              'span',
+              { className: 'toggle-switch ' + (toggleFlag1 ? 'active' : ''), onClick: this.toggleFirstState },
+              React.createElement('span', { className: 'toggle-knob' })
             )
           ),
           React.createElement(
-            "div",
-            { className: "card-body" },
+            'div',
+            { className: 'card-body' },
             React.createElement(
-              "h4",
-              { className: "card-title automatic-control " + (firstActive ? 'not-active-label' : '') },
-              this.returnLabelText(2, secondActive)
+              'h4',
+              { className: 'card-title automatic-control ' + (toggleFlag1 ? 'not-active-label' : '') },
+              this.returnSecondLabel(toggleFlag2)
             ),
             React.createElement(
-              "span",
-              { className: "toggle-switch " + (secondActive ? 'active' : '') + " " + (firstActive ? 'not-active' : ''), onClick: this.toggleSecondState },
-              React.createElement("span", { className: "toggle-knob" })
+              'span',
+              { className: 'toggle-switch ' + (toggleFlag2 ? 'active' : '') + ' ' + (toggleFlag1 ? 'not-active' : ''), onClick: this.toggleSecondState },
+              React.createElement('span', { className: 'toggle-knob' })
             )
           )
         )

@@ -13,7 +13,7 @@ class BoardController {
         console.log('Usuário desconectado');
       });
 
-      socket.on("pageLoading", args => {
+      socket.on("pageBoot", args => {
         this.socket.emit("requestBoot", args);
       });
 
@@ -23,7 +23,7 @@ class BoardController {
       });
 
       socket.on("onGreenhouseCheck", args => {
-        console.log(args);
+        this.socket.broadcast.emit("front_onGreenhouseCheck", args);
       });
 
       socket.on("requestToggleTool", args => {

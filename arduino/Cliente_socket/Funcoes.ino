@@ -69,6 +69,8 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
       // conecta ao namespace comum "/" (não há acoplamento automático apartir do Socket.IO V3)
       socketIO.send(sIOtype_CONNECT, "/");
       socketStatus = true;
+      // Boot
+      checkGreenhouse(true);
       break;
     case sIOtype_EVENT:
       {
@@ -80,11 +82,12 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
         // extract the values
         JsonArray array = doc.as<JsonArray>();
         const char* topic = array[0].as<const char*>();
-        const char* data = array[1].as<const char*>();
-        Serial.printf("[SocketIO] Tópico %s\n", topic);
-        Serial.printf("[SocketIO] Carga %s\n", data);
+        
+        //Serial.printf("[SocketIO] Tópico %s\n", topic);
+        //Serial.printf("[SocketIO] Carga %s\n", data);
 
         if (strcmp(topic, "onToggleTool") == 0) {
+          const char* data = array[1].as<const char*>();
           if (strcmp(data, "PUMP_ON") == 0) {
             pumpState = HIGH;
           } 
@@ -141,7 +144,7 @@ void refreshLCD() {
   lcd.clear();
   // passar display message para as globais
   String displayMsg = "";
-  lcdState = 1;
+  //lcdState = 1;
   switch (lcdState) {
     case 0: {
         displayMsg = "Ar T:" + String(airTemperature) + "C";
@@ -172,5 +175,5 @@ void refreshLCD() {
       break;
   }
 
-  //lcdState = (lcdState == 2) ? 0 : lcdState + 1;
+  lcdState = (lcdState == 2) ? 0 : lcdState + 1;
 }

@@ -86,7 +86,7 @@ void setup() {
   initWifi();
   initSocketIO();
 
-  //boot();
+  
   /*
    * lê os sensores da estufa
    * manda as informações para o servidor
@@ -97,7 +97,7 @@ void setup() {
    * arduino continua trabalhando sincronizado com o servidor
    */
 
-  lcdPrint(0, 1, "Sistema Online");
+  lcdPrint(0, 1, "Sistema Pronto");
   delay(2000);
 }
 
@@ -109,7 +109,7 @@ void loop() {
   checkCommunication();
   checkInputs();
 
-  if ( millis() - counter1s >= 500 ) {
+  if ( millis() - counter1s >= 1200 ) {
     refreshLCD();
     counter1s = millis();
   }
