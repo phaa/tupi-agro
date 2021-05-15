@@ -1,59 +1,6 @@
 <%- contentFor('body') %>
 <div id="like_button_container"></div>
 <div class="row">
-  <div class="col-lg-12 col-md-12">
-    <div class="card card-chart">
-      <div class="card-header">
-        <h5 class="card-category"><b id="umidadeSolo"></b>%</h5>
-        <h4 class="card-title">Umidade do solo</h4>
-      </div>
-      <div class="card-body">
-        <div class="chart-area">
-          <canvas id="barChartSimpleGradientsNumbers"></canvas>
-        </div>
-      </div>
-      <div class="card-footer">
-        <div class="stats">
-          <i class="now-ui-icons arrows-1_refresh-69"></i> Em tempo real
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-12 col-md-12">
-    <div class="card card-chart">
-      <div class="card-header">
-        <h5 class="card-category"><b id="temperaturaAr"></b>°C</h5>
-        <h4 class="card-title">Temperatura do ar</h4>
-      </div>
-      <div class="card-body">
-        <div class="chart-area">
-          <canvas id="lineChartExample"></canvas>
-        </div>
-      </div>
-      <div class="card-footer">
-        <div class="stats">
-          <i class="now-ui-icons arrows-1_refresh-69"></i> Em tempo real
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-12 col-md-12">
-    <div class="card card-chart">
-      <div class="card-header">
-        <h5 class="card-category"><b id="umidadeAr"></b>%</h5>
-        <h4 class="card-title">Umidade do ar</h4>
-      </div>
-      <div class="card-body">
-        <div class="chart-area">
-          <canvas id="lineChartExampleWithNumbersAndGrid"></canvas>
-        </div>
-      </div>
-      <div class="card-footer">
-        <div class="stats">
-          <i class="now-ui-icons arrows-1_refresh-69"></i> Em tempo real
-        </div>
-      </div>
-    </div>
 
     <div id="loader-wrapper">
       <div id="loader"></div>
@@ -61,7 +8,6 @@
       <div class="loader-section section-right"></div>
     </div>
 
-  </div>
   
 </div>
 
@@ -71,11 +17,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js" integrity="sha512-bZS47S7sPOxkjU/4Bt0zrhEtWx0y0CRkhEp8IckzK+ltifIIE9EMIMTuT/mEzoIMewUINruDBIR/jJnbguonqQ==" crossorigin="anonymous"></script>
 <script src="/js/iot_c/like_button.js"></script>
 <script>
-chartColor = "#FFFFFF";
+let chartColor = "#FFFFFF";
 
 // General configuration for the charts with Line gradientStroke
 
-chartConfiguration = {
+const chartConfiguration = {
   maintainAspectRatio: false,
   legend: {
     display: false

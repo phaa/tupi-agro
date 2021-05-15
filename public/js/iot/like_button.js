@@ -16,8 +16,13 @@ class ControlsManager extends React.Component {
       airTemperature: 0,
       soilMoisture: 0,
     };
+
+    // Refs
+    this.soilMoistureChart = React.createRef();
+    this.airTemperatureChart = React.createRef();
+    this.airHumidityChart = React.createRef();
     
-    this.setIntervals = this.setIntervals.bind(this);
+    this.bootstrap = this.bootstrap.bind(this);
     this.getGreenhouseData = this.getGreenhouseData.bind(this);
     this.unpackGreenhouseData = this.unpackGreenhouseData.bind(this);
 
@@ -29,17 +34,15 @@ class ControlsManager extends React.Component {
     this.toggleAutomaticExausting = this.toggleAutomaticExausting.bind(this);
     this.toggleAutomaticFertirrigation = this.toggleAutomaticFertirrigation.bind(this);
 
-    this.getGreenhouseData();
-    this.setIntervals();
+    this.bootstrap();
   }
 
-  setIntervals() {
+  bootstrap() {
+    this.getGreenhouseData();
     // Atualização em tempo real dos dados da estufa
     // posso colocar no esp para retornar os dados da estufa como resposta aos commands
     // para isso eu crio uma função para mandar os dados, para assim reaproveitar o código
-    setInterval(() => {
-      this.getGreenhouseData();
-    }, 2000);
+    setInterval(() => { this.getGreenhouseData(); }, 2000);
   }
 
   unpackGreenhouseData(data) {
@@ -58,67 +61,128 @@ class ControlsManager extends React.Component {
     });
   }
 
-  getGreenhouseData(data) {
-    if (data) {
-      this.unpackGreenhouseData(data);
-      console.log(data)
-    } else {
-      // pega pelo axios
-      axios.get(`http://192.168.0.108/greenhouse`)
+  getGreenhouseData() {
+    axios.get(`http://192.168.0.108/greenhouse`)
       .then(res => {
-        const data = res.data;
-        this.unpackGreenhouseData(data);
+        this.unpackGreenhouseData(res.data);
         document.body.classList.add('loaded');
+      })
+      .catch(error => {
+        console.log(error); // Network Error
+        console.log(error.status); // undefined
+        console.log(error.code); // undefined
+        document.body.classList.remove('loaded');
       });
-    }
-    
   }
 
   toggleAutomaticIrrigation(state) {
     if (state) { state = 1; } else {state = 0}
     //this.setState({ automaticIrrigation: state });
-    axios.get(`http://192.168.0.108/command?automaticIrrigation=${state}`).then(res => { this.getGreenhouseData(res.data) });
+    axios.get(`http://192.168.0.108/command?automaticIrrigation=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
   }
 
   toggleAutomaticExausting(state) {
     if (state) { state = 1; } else {state = 0}
     //this.setState({ automaticExausting: state });
-    axios.get(`http://192.168.0.108/command?automaticExausting=${state}`).then(res => { this.getGreenhouseData(res.data) });
+    axios.get(`http://192.168.0.108/command?automaticExausting=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
   }
 
   toggleAutomaticFertirrigation(state) {
     if (state) { state = 1; } else {state = 0}
     //this.setState({ automaticFertirrigation: state });
-    axios.get(`http://192.168.0.108/command?automaticFertirrigation=${state}`).then(res => { this.getGreenhouseData(res.data) });
+    axios.get(`http://192.168.0.108/command?automaticFertirrigation=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
   }
 
   togglePump(state) {
     if (state) { state = 1; } else {state = 0}
-    axios.get(`http://192.168.0.108/command?pump=${state}`).then(res => { this.getGreenhouseData(res.data) });
+    axios.get(`http://192.168.0.108/command?pump=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
   }
 
   toggleExaust(state) {
     if (state) { state = 1; } else {state = 0}
-    axios.get(`http://192.168.0.108/command?exaust=${state}`).then(res => { this.getGreenhouseData(res.data) });
+    axios.get(`http://192.168.0.108/command?exaust=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
   }
 
   toggleFertirrigation(state) {
     if (state) { state = 1; } else {state = 0}
-    axios.get(`http://192.168.0.108/command?fertirrigation=${state}`).then(res => { this.getGreenhouseData(res.data) });
+    axios.get(`http://192.168.0.108/command?fertirrigation=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
   }
 
   render() {
     return (
-      <div className="row">
-        <Card cardTitle={"Controle de Irrigação"} 
-        toggleFlag1={this.state.automaticIrrigation} callback1={this.toggleAutomaticIrrigation} 
-        toggleFlag2={this.state.pumpState} callback2={this.togglePump}/>
-        <Card cardTitle={"Controle de Exaustão"} 
-        toggleFlag1={this.state.automaticExausting} callback1={this.toggleAutomaticExausting} 
-        toggleFlag2={this.state.exaustingState} callback2={this.toggleExaust}/>
-        <Card cardTitle={"Controle de Fertirrigação"} 
-        toggleFlag1={this.state.automaticFertirrigation} callback1={this.toggleAutomaticFertirrigation} 
-        toggleFlag2={this.state.fertirrigationState} callback2={this.toggleFertirrigation}/>
+      <div>
+        <div className="row">
+          <Card cardTitle={"Controle de Irrigação"} 
+          toggleFlag1={this.state.automaticIrrigation} callback1={this.toggleAutomaticIrrigation} 
+          toggleFlag2={this.state.pumpState} callback2={this.togglePump}/>
+          <Card cardTitle={"Controle de Exaustão"} 
+          toggleFlag1={this.state.automaticExausting} callback1={this.toggleAutomaticExausting} 
+          toggleFlag2={this.state.exaustingState} callback2={this.toggleExaust}/>
+          <Card cardTitle={"Controle de Fertirrigação"} 
+          toggleFlag1={this.state.automaticFertirrigation} callback1={this.toggleAutomaticFertirrigation} 
+          toggleFlag2={this.state.fertirrigationState} callback2={this.toggleFertirrigation}/>
+        </div>
+        <LineChart
+          data={[]}
+          title={[]}
+          color="#70CAD1"
+        />
+        <div className="row"> 
+          <div class="col-lg-12 col-md-12">
+            <div class="card card-chart">
+              <div class="card-header">
+                <h5 class="card-category"><b>{this.state.soilMoisture}</b>%</h5>
+                <h4 class="card-title">Umidade do solo</h4>
+              </div>
+              <div class="card-body">
+                <div class="chart-area">
+                  <canvas ref={this.soilMoistureChart}></canvas>
+                </div>
+              </div>
+              <div class="card-footer">
+                <div class="stats">
+                  <i class="now-ui-icons arrows-1_refresh-69"></i> Em tempo real
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-12 col-md-12">
+            <div class="card card-chart">
+              <div class="card-header">
+                <h5 class="card-category"><b>{this.state.airTemperature}</b>°C</h5>
+                <h4 class="card-title">Temperatura do ar</h4>
+              </div>
+              <div class="card-body">
+                <div class="chart-area">
+                  <canvas ref={this.airTemperatureChart}></canvas>
+                </div>
+              </div>
+              <div class="card-footer">
+                <div class="stats">
+                  <i class="now-ui-icons arrows-1_refresh-69"></i> Em tempo real
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-12 col-md-12">
+            <div class="card card-chart">
+              <div class="card-header">
+                <h5 class="card-category"><b>{this.state.airHumidity}</b>%</h5>
+                <h4 class="card-title">Umidade do ar</h4>
+              </div>
+              <div class="card-body">
+                <div class="chart-area">
+                  <canvas ref={this.airHumidityChart}></canvas>
+                </div>
+              </div>
+              <div class="card-footer">
+                <div class="stats">
+                  <i class="now-ui-icons arrows-1_refresh-69"></i> Em tempo real
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -180,5 +244,90 @@ class Card extends React.Component {
   }
 }
 
+class LineChart extends React.Component {
+  constructor(props) {
+    super(props);
+    this.canvasRef = React.createRef();
+    this.chartConfiguration = {
+      maintainAspectRatio: false,
+      legend: {
+        display: false
+      },
+      tooltips: {
+        bodySpacing: 4,
+        mode: "nearest",
+        intersect: 0,
+        position: "nearest",
+        xPadding: 10,
+        yPadding: 10,
+        caretPadding: 10
+      },
+      responsive: true,
+      scales: {
+        yAxes: [{
+          gridLines: 0,
+          gridLines: {
+            zeroLineColor: "transparent",
+            drawBorder: false
+          }
+        }],
+        xAxes: [{
+          display: 0,
+          gridLines: 0,
+          ticks: {
+            display: false
+          },
+          gridLines: {
+            zeroLineColor: "transparent",
+            drawTicks: false,
+            display: false,
+            drawBorder: false
+          }
+        }]
+      },
+      layout: {
+        padding: {
+          left: 0,
+          right: 0,
+          top: 15,
+          bottom: 15
+        }
+      }
+    };
+  }
+
+  componentDidMount() {
+    this.myChart = new Chart(this.canvasRef.current, {
+      type: 'bar',
+      data: {
+        // labels: [0,],
+        labels: this.props.data.map(d => d.label),
+        datasets: [{
+          label: this.props.title,
+          data: this.props.data.map(d => d.value),
+          backgroundColor: this.props.color,
+          borderColor: "#18ce0f",
+          pointBorderColor: "#FFF",
+          pointBackgroundColor: "#18ce0f",
+          pointBorderWidth: 2,
+          pointHoverRadius: 4,
+          pointHoverBorderWidth: 1,
+          pointRadius: 4,
+          fill: true,
+          //backgroundColor: gradientFill,
+          borderWidth: 2,
+        }]
+      },
+      options: this.chartConfiguration
+    }
+    );
+  }
+
+  render() {
+    return (
+      <canvas ref={this.canvasRef} />
+    );
+  }
+}
 
 ReactDOM.render(<ControlsManager />,document.getElementById('like_button_container'));

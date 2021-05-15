@@ -2,6 +2,8 @@
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
@@ -29,7 +31,12 @@ var ControlsManager = function (_React$Component) {
       soilMoisture: 0
     };
 
-    _this.setIntervals = _this.setIntervals.bind(_this);
+    // Refs
+    _this.soilMoistureChart = React.createRef();
+    _this.airTemperatureChart = React.createRef();
+    _this.airHumidityChart = React.createRef();
+
+    _this.bootstrap = _this.bootstrap.bind(_this);
     _this.getGreenhouseData = _this.getGreenhouseData.bind(_this);
     _this.unpackGreenhouseData = _this.unpackGreenhouseData.bind(_this);
 
@@ -41,16 +48,16 @@ var ControlsManager = function (_React$Component) {
     _this.toggleAutomaticExausting = _this.toggleAutomaticExausting.bind(_this);
     _this.toggleAutomaticFertirrigation = _this.toggleAutomaticFertirrigation.bind(_this);
 
-    _this.getGreenhouseData();
-    _this.setIntervals();
+    _this.bootstrap();
     return _this;
   }
 
   _createClass(ControlsManager, [{
-    key: 'setIntervals',
-    value: function setIntervals() {
+    key: 'bootstrap',
+    value: function bootstrap() {
       var _this2 = this;
 
+      this.getGreenhouseData();
       // Atualização em tempo real dos dados da estufa
       // posso colocar no esp para retornar os dados da estufa como resposta aos commands
       // para isso eu crio uma função para mandar os dados, para assim reaproveitar o código
@@ -77,20 +84,18 @@ var ControlsManager = function (_React$Component) {
     }
   }, {
     key: 'getGreenhouseData',
-    value: function getGreenhouseData(data) {
+    value: function getGreenhouseData() {
       var _this3 = this;
 
-      if (data) {
-        this.unpackGreenhouseData(data);
-        console.log(data);
-      } else {
-        // pega pelo axios
-        axios.get('http://192.168.0.108/greenhouse').then(function (res) {
-          var data = res.data;
-          _this3.unpackGreenhouseData(data);
-          document.body.classList.add('loaded');
-        });
-      }
+      axios.get('http://192.168.0.108/greenhouse').then(function (res) {
+        _this3.unpackGreenhouseData(res.data);
+        document.body.classList.add('loaded');
+      }).catch(function (error) {
+        console.log(error); // Network Error
+        console.log(error.status); // undefined
+        console.log(error.code); // undefined
+        document.body.classList.remove('loaded');
+      });
     }
   }, {
     key: 'toggleAutomaticIrrigation',
@@ -104,7 +109,7 @@ var ControlsManager = function (_React$Component) {
       }
       //this.setState({ automaticIrrigation: state });
       axios.get('http://192.168.0.108/command?automaticIrrigation=' + state).then(function (res) {
-        _this4.getGreenhouseData(res.data);
+        _this4.unpackGreenhouseData(res.data);
       });
     }
   }, {
@@ -119,7 +124,7 @@ var ControlsManager = function (_React$Component) {
       }
       //this.setState({ automaticExausting: state });
       axios.get('http://192.168.0.108/command?automaticExausting=' + state).then(function (res) {
-        _this5.getGreenhouseData(res.data);
+        _this5.unpackGreenhouseData(res.data);
       });
     }
   }, {
@@ -134,7 +139,7 @@ var ControlsManager = function (_React$Component) {
       }
       //this.setState({ automaticFertirrigation: state });
       axios.get('http://192.168.0.108/command?automaticFertirrigation=' + state).then(function (res) {
-        _this6.getGreenhouseData(res.data);
+        _this6.unpackGreenhouseData(res.data);
       });
     }
   }, {
@@ -148,7 +153,7 @@ var ControlsManager = function (_React$Component) {
         state = 0;
       }
       axios.get('http://192.168.0.108/command?pump=' + state).then(function (res) {
-        _this7.getGreenhouseData(res.data);
+        _this7.unpackGreenhouseData(res.data);
       });
     }
   }, {
@@ -162,7 +167,7 @@ var ControlsManager = function (_React$Component) {
         state = 0;
       }
       axios.get('http://192.168.0.108/command?exaust=' + state).then(function (res) {
-        _this8.getGreenhouseData(res.data);
+        _this8.unpackGreenhouseData(res.data);
       });
     }
   }, {
@@ -176,7 +181,7 @@ var ControlsManager = function (_React$Component) {
         state = 0;
       }
       axios.get('http://192.168.0.108/command?fertirrigation=' + state).then(function (res) {
-        _this9.getGreenhouseData(res.data);
+        _this9.unpackGreenhouseData(res.data);
       });
     }
   }, {
@@ -184,16 +189,167 @@ var ControlsManager = function (_React$Component) {
     value: function render() {
       return React.createElement(
         'div',
-        { className: 'row' },
-        React.createElement(Card, { cardTitle: "Controle de Irrigação",
-          toggleFlag1: this.state.automaticIrrigation, callback1: this.toggleAutomaticIrrigation,
-          toggleFlag2: this.state.pumpState, callback2: this.togglePump }),
-        React.createElement(Card, { cardTitle: "Controle de Exaustão",
-          toggleFlag1: this.state.automaticExausting, callback1: this.toggleAutomaticExausting,
-          toggleFlag2: this.state.exaustingState, callback2: this.toggleExaust }),
-        React.createElement(Card, { cardTitle: "Controle de Fertirrigação",
-          toggleFlag1: this.state.automaticFertirrigation, callback1: this.toggleAutomaticFertirrigation,
-          toggleFlag2: this.state.fertirrigationState, callback2: this.toggleFertirrigation })
+        null,
+        React.createElement(
+          'div',
+          { className: 'row' },
+          React.createElement(Card, { cardTitle: "Controle de Irrigação",
+            toggleFlag1: this.state.automaticIrrigation, callback1: this.toggleAutomaticIrrigation,
+            toggleFlag2: this.state.pumpState, callback2: this.togglePump }),
+          React.createElement(Card, { cardTitle: "Controle de Exaustão",
+            toggleFlag1: this.state.automaticExausting, callback1: this.toggleAutomaticExausting,
+            toggleFlag2: this.state.exaustingState, callback2: this.toggleExaust }),
+          React.createElement(Card, { cardTitle: "Controle de Fertirrigação",
+            toggleFlag1: this.state.automaticFertirrigation, callback1: this.toggleAutomaticFertirrigation,
+            toggleFlag2: this.state.fertirrigationState, callback2: this.toggleFertirrigation })
+        ),
+        React.createElement(LineChart, {
+          data: [],
+          title: [],
+          color: '#70CAD1'
+        }),
+        React.createElement(
+          'div',
+          { className: 'row' },
+          React.createElement(
+            'div',
+            { 'class': 'col-lg-12 col-md-12' },
+            React.createElement(
+              'div',
+              { 'class': 'card card-chart' },
+              React.createElement(
+                'div',
+                { 'class': 'card-header' },
+                React.createElement(
+                  'h5',
+                  { 'class': 'card-category' },
+                  React.createElement(
+                    'b',
+                    null,
+                    this.state.soilMoisture
+                  ),
+                  '%'
+                ),
+                React.createElement(
+                  'h4',
+                  { 'class': 'card-title' },
+                  'Umidade do solo'
+                )
+              ),
+              React.createElement(
+                'div',
+                { 'class': 'card-body' },
+                React.createElement(
+                  'div',
+                  { 'class': 'chart-area' },
+                  React.createElement('canvas', { ref: this.soilMoistureChart })
+                )
+              ),
+              React.createElement(
+                'div',
+                { 'class': 'card-footer' },
+                React.createElement(
+                  'div',
+                  { 'class': 'stats' },
+                  React.createElement('i', { 'class': 'now-ui-icons arrows-1_refresh-69' }),
+                  ' Em tempo real'
+                )
+              )
+            )
+          ),
+          React.createElement(
+            'div',
+            { 'class': 'col-lg-12 col-md-12' },
+            React.createElement(
+              'div',
+              { 'class': 'card card-chart' },
+              React.createElement(
+                'div',
+                { 'class': 'card-header' },
+                React.createElement(
+                  'h5',
+                  { 'class': 'card-category' },
+                  React.createElement(
+                    'b',
+                    null,
+                    this.state.airTemperature
+                  ),
+                  '\xB0C'
+                ),
+                React.createElement(
+                  'h4',
+                  { 'class': 'card-title' },
+                  'Temperatura do ar'
+                )
+              ),
+              React.createElement(
+                'div',
+                { 'class': 'card-body' },
+                React.createElement(
+                  'div',
+                  { 'class': 'chart-area' },
+                  React.createElement('canvas', { ref: this.airTemperatureChart })
+                )
+              ),
+              React.createElement(
+                'div',
+                { 'class': 'card-footer' },
+                React.createElement(
+                  'div',
+                  { 'class': 'stats' },
+                  React.createElement('i', { 'class': 'now-ui-icons arrows-1_refresh-69' }),
+                  ' Em tempo real'
+                )
+              )
+            )
+          ),
+          React.createElement(
+            'div',
+            { 'class': 'col-lg-12 col-md-12' },
+            React.createElement(
+              'div',
+              { 'class': 'card card-chart' },
+              React.createElement(
+                'div',
+                { 'class': 'card-header' },
+                React.createElement(
+                  'h5',
+                  { 'class': 'card-category' },
+                  React.createElement(
+                    'b',
+                    null,
+                    this.state.airHumidity
+                  ),
+                  '%'
+                ),
+                React.createElement(
+                  'h4',
+                  { 'class': 'card-title' },
+                  'Umidade do ar'
+                )
+              ),
+              React.createElement(
+                'div',
+                { 'class': 'card-body' },
+                React.createElement(
+                  'div',
+                  { 'class': 'chart-area' },
+                  React.createElement('canvas', { ref: this.airHumidityChart })
+                )
+              ),
+              React.createElement(
+                'div',
+                { 'class': 'card-footer' },
+                React.createElement(
+                  'div',
+                  { 'class': 'stats' },
+                  React.createElement('i', { 'class': 'now-ui-icons arrows-1_refresh-69' }),
+                  ' Em tempo real'
+                )
+              )
+            )
+          )
+        )
       );
     }
   }]);
@@ -295,6 +451,103 @@ var Card = function (_React$Component2) {
   }]);
 
   return Card;
+}(React.Component);
+
+var LineChart = function (_React$Component3) {
+  _inherits(LineChart, _React$Component3);
+
+  function LineChart(props) {
+    _classCallCheck(this, LineChart);
+
+    var _this11 = _possibleConstructorReturn(this, (LineChart.__proto__ || Object.getPrototypeOf(LineChart)).call(this, props));
+
+    _this11.canvasRef = React.createRef();
+    _this11.chartConfiguration = {
+      maintainAspectRatio: false,
+      legend: {
+        display: false
+      },
+      tooltips: {
+        bodySpacing: 4,
+        mode: "nearest",
+        intersect: 0,
+        position: "nearest",
+        xPadding: 10,
+        yPadding: 10,
+        caretPadding: 10
+      },
+      responsive: true,
+      scales: {
+        yAxes: [_defineProperty({
+          gridLines: 0
+        }, 'gridLines', {
+          zeroLineColor: "transparent",
+          drawBorder: false
+        })],
+        xAxes: [_defineProperty({
+          display: 0,
+          gridLines: 0,
+          ticks: {
+            display: false
+          }
+        }, 'gridLines', {
+          zeroLineColor: "transparent",
+          drawTicks: false,
+          display: false,
+          drawBorder: false
+        })]
+      },
+      layout: {
+        padding: {
+          left: 0,
+          right: 0,
+          top: 15,
+          bottom: 15
+        }
+      }
+    };
+    return _this11;
+  }
+
+  _createClass(LineChart, [{
+    key: 'componentDidMount',
+    value: function componentDidMount() {
+      this.myChart = new Chart(this.canvasRef.current, {
+        type: 'bar',
+        data: {
+          // labels: [0,],
+          labels: this.props.data.map(function (d) {
+            return d.label;
+          }),
+          datasets: [{
+            label: this.props.title,
+            data: this.props.data.map(function (d) {
+              return d.value;
+            }),
+            backgroundColor: this.props.color,
+            borderColor: "#18ce0f",
+            pointBorderColor: "#FFF",
+            pointBackgroundColor: "#18ce0f",
+            pointBorderWidth: 2,
+            pointHoverRadius: 4,
+            pointHoverBorderWidth: 1,
+            pointRadius: 4,
+            fill: true,
+            //backgroundColor: gradientFill,
+            borderWidth: 2
+          }]
+        },
+        options: this.chartConfiguration
+      });
+    }
+  }, {
+    key: 'render',
+    value: function render() {
+      return React.createElement('canvas', { ref: this.canvasRef });
+    }
+  }]);
+
+  return LineChart;
 }(React.Component);
 
 ReactDOM.render(React.createElement(ControlsManager, null), document.getElementById('like_button_container'));
