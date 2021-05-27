@@ -1,4 +1,0 @@
-class SysParamsManager {
-    constructor() {
-    }
-  }

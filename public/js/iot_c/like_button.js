@@ -79,7 +79,8 @@ var ControlsManager = function (_React$Component) {
         automaticFertirrigation: data.automaticFertirrigation,
         airHumidity: data.airHumidity,
         airTemperature: data.airTemperature,
-        soilMoisture: data.soilMoisture
+        soilMoisture: data.soilMoisture,
+        lastCheck: new Date().getTime()
       });
     }
   }, {
@@ -201,154 +202,13 @@ var ControlsManager = function (_React$Component) {
             toggleFlag2: this.state.exaustingState, callback2: this.toggleExaust }),
           React.createElement(Card, { cardTitle: "Controle de Fertirrigação",
             toggleFlag1: this.state.automaticFertirrigation, callback1: this.toggleAutomaticFertirrigation,
-            toggleFlag2: this.state.fertirrigationState, callback2: this.toggleFertirrigation })
-        ),
-        React.createElement(LineChart, {
-          data: [],
-          title: [],
-          color: '#70CAD1'
-        }),
-        React.createElement(
-          'div',
-          { className: 'row' },
-          React.createElement(
-            'div',
-            { 'class': 'col-lg-12 col-md-12' },
-            React.createElement(
-              'div',
-              { 'class': 'card card-chart' },
-              React.createElement(
-                'div',
-                { 'class': 'card-header' },
-                React.createElement(
-                  'h5',
-                  { 'class': 'card-category' },
-                  React.createElement(
-                    'b',
-                    null,
-                    this.state.soilMoisture
-                  ),
-                  '%'
-                ),
-                React.createElement(
-                  'h4',
-                  { 'class': 'card-title' },
-                  'Umidade do solo'
-                )
-              ),
-              React.createElement(
-                'div',
-                { 'class': 'card-body' },
-                React.createElement(
-                  'div',
-                  { 'class': 'chart-area' },
-                  React.createElement('canvas', { ref: this.soilMoistureChart })
-                )
-              ),
-              React.createElement(
-                'div',
-                { 'class': 'card-footer' },
-                React.createElement(
-                  'div',
-                  { 'class': 'stats' },
-                  React.createElement('i', { 'class': 'now-ui-icons arrows-1_refresh-69' }),
-                  ' Em tempo real'
-                )
-              )
-            )
-          ),
-          React.createElement(
-            'div',
-            { 'class': 'col-lg-12 col-md-12' },
-            React.createElement(
-              'div',
-              { 'class': 'card card-chart' },
-              React.createElement(
-                'div',
-                { 'class': 'card-header' },
-                React.createElement(
-                  'h5',
-                  { 'class': 'card-category' },
-                  React.createElement(
-                    'b',
-                    null,
-                    this.state.airTemperature
-                  ),
-                  '\xB0C'
-                ),
-                React.createElement(
-                  'h4',
-                  { 'class': 'card-title' },
-                  'Temperatura do ar'
-                )
-              ),
-              React.createElement(
-                'div',
-                { 'class': 'card-body' },
-                React.createElement(
-                  'div',
-                  { 'class': 'chart-area' },
-                  React.createElement('canvas', { ref: this.airTemperatureChart })
-                )
-              ),
-              React.createElement(
-                'div',
-                { 'class': 'card-footer' },
-                React.createElement(
-                  'div',
-                  { 'class': 'stats' },
-                  React.createElement('i', { 'class': 'now-ui-icons arrows-1_refresh-69' }),
-                  ' Em tempo real'
-                )
-              )
-            )
-          ),
-          React.createElement(
-            'div',
-            { 'class': 'col-lg-12 col-md-12' },
-            React.createElement(
-              'div',
-              { 'class': 'card card-chart' },
-              React.createElement(
-                'div',
-                { 'class': 'card-header' },
-                React.createElement(
-                  'h5',
-                  { 'class': 'card-category' },
-                  React.createElement(
-                    'b',
-                    null,
-                    this.state.airHumidity
-                  ),
-                  '%'
-                ),
-                React.createElement(
-                  'h4',
-                  { 'class': 'card-title' },
-                  'Umidade do ar'
-                )
-              ),
-              React.createElement(
-                'div',
-                { 'class': 'card-body' },
-                React.createElement(
-                  'div',
-                  { 'class': 'chart-area' },
-                  React.createElement('canvas', { ref: this.airHumidityChart })
-                )
-              ),
-              React.createElement(
-                'div',
-                { 'class': 'card-footer' },
-                React.createElement(
-                  'div',
-                  { 'class': 'stats' },
-                  React.createElement('i', { 'class': 'now-ui-icons arrows-1_refresh-69' }),
-                  ' Em tempo real'
-                )
-              )
-            )
-          )
+            toggleFlag2: this.state.fertirrigationState, callback2: this.toggleFertirrigation }),
+          React.createElement(LineChart, { lastCheck: this.state.lastCheck, color: "#18ce0f",
+            dataSource: this.state.soilMoisture, dataName: "Umidade do solo", dataMeasureUnit: "%" }),
+          React.createElement(LineChart, { lastCheck: this.state.lastCheck, color: "#f96332",
+            dataSource: this.state.airTemperature, dataName: "Temperatura do ar", dataMeasureUnit: "°C" }),
+          React.createElement(LineChart, { lastCheck: this.state.lastCheck, color: "#2CA8FF",
+            dataSource: this.state.airHumidity, dataName: "Umidade do ar", dataMeasureUnit: "%" })
         )
       );
     }
@@ -462,88 +322,165 @@ var LineChart = function (_React$Component3) {
     var _this11 = _possibleConstructorReturn(this, (LineChart.__proto__ || Object.getPrototypeOf(LineChart)).call(this, props));
 
     _this11.canvasRef = React.createRef();
-    _this11.chartConfiguration = {
-      maintainAspectRatio: false,
-      legend: {
-        display: false
-      },
-      tooltips: {
-        bodySpacing: 4,
-        mode: "nearest",
-        intersect: 0,
-        position: "nearest",
-        xPadding: 10,
-        yPadding: 10,
-        caretPadding: 10
-      },
-      responsive: true,
-      scales: {
-        yAxes: [_defineProperty({
-          gridLines: 0
-        }, 'gridLines', {
-          zeroLineColor: "transparent",
-          drawBorder: false
-        })],
-        xAxes: [_defineProperty({
-          display: 0,
-          gridLines: 0,
-          ticks: {
-            display: false
-          }
-        }, 'gridLines', {
-          zeroLineColor: "transparent",
-          drawTicks: false,
-          display: false,
-          drawBorder: false
-        })]
-      },
-      layout: {
-        padding: {
-          left: 0,
-          right: 0,
-          top: 15,
-          bottom: 15
-        }
-      }
-    };
     return _this11;
   }
 
   _createClass(LineChart, [{
     key: 'componentDidMount',
     value: function componentDidMount() {
-      this.myChart = new Chart(this.canvasRef.current, {
-        type: 'bar',
+      var chartColor = "#FFFFFF";
+      var ctx = this.canvasRef.current.getContext("2d");
+
+      var gradientStroke = ctx.createLinearGradient(500, 0, 100, 0);
+      gradientStroke.addColorStop(0, this.props.color);
+      gradientStroke.addColorStop(1, chartColor);
+
+      var gradientFill = ctx.createLinearGradient(0, 170, 0, 50);
+      gradientFill.addColorStop(0, "rgba(128, 182, 244, 0)");
+      gradientFill.addColorStop(1, hexToRGB(this.props.color, 0.4));
+
+      var chartConfiguration = {
+        maintainAspectRatio: false,
+        legend: {
+          display: false
+        },
+        tooltips: {
+          bodySpacing: 4,
+          mode: "nearest",
+          intersect: 0,
+          position: "nearest",
+          xPadding: 10,
+          yPadding: 10,
+          caretPadding: 10
+        },
+        responsive: true,
+        scales: {
+          yAxes: [_defineProperty({
+            ticks: {
+              precision: 0
+            },
+            gridLines: 0
+          }, 'gridLines', {
+            zeroLineColor: "transparent",
+            drawBorder: false
+          })],
+          xAxes: [_defineProperty({
+            display: 0,
+            gridLines: 0,
+            ticks: {
+              display: false
+            }
+          }, 'gridLines', {
+            zeroLineColor: "transparent",
+            drawTicks: false,
+            display: false,
+            drawBorder: false
+          })]
+        },
+        layout: {
+          padding: {
+            left: 15,
+            right: 15,
+            top: 15,
+            bottom: 15
+          }
+        }
+      };
+
+      this.myChart = new Chart(ctx, {
+        type: 'line',
+        responsive: false,
         data: {
-          // labels: [0,],
-          labels: this.props.data.map(function (d) {
-            return d.label;
-          }),
+          labels: new Array(),
           datasets: [{
-            label: this.props.title,
-            data: this.props.data.map(function (d) {
-              return d.value;
-            }),
-            backgroundColor: this.props.color,
-            borderColor: "#18ce0f",
+            label: "Leitura (%)",
+            borderColor: this.props.color,
             pointBorderColor: "#FFF",
-            pointBackgroundColor: "#18ce0f",
+            pointBackgroundColor: this.props.color,
             pointBorderWidth: 2,
             pointHoverRadius: 4,
             pointHoverBorderWidth: 1,
             pointRadius: 4,
             fill: true,
-            //backgroundColor: gradientFill,
-            borderWidth: 2
+            backgroundColor: gradientFill,
+            borderWidth: 2,
+            data: new Array()
           }]
         },
-        options: this.chartConfiguration
+        options: chartConfiguration
       });
+    }
+  }, {
+    key: 'componentDidUpdate',
+    value: function componentDidUpdate(prevProps) {
+      if (prevProps.lastCheck !== this.props.lastCheck) {
+        this.addData(this.props.dataSource, this.props.dataSource);
+      }
+    }
+  }, {
+    key: 'addData',
+    value: function addData(label, data) {
+      this.myChart.data.labels.push(label);
+      if (this.myChart.data.labels.length >= 9) {
+        this.myChart.data.labels.shift();
+      }
+      this.myChart.data.datasets.forEach(function (dataset) {
+        dataset.data.push(data);
+        if (dataset.data.length >= 9) {
+          dataset.data.shift();
+        }
+      });
+      this.myChart.update();
     }
   }, {
     key: 'render',
     value: function render() {
-      return React.createElement('canvas', { ref: this.canvasRef });
+      return React.createElement(
+        'div',
+        { className: 'col-lg-12 col-md-12' },
+        React.createElement(
+          'div',
+          { className: 'card card-chart' },
+          React.createElement(
+            'div',
+            { className: 'card-header' },
+            React.createElement(
+              'h5',
+              { className: 'card-category' },
+              React.createElement(
+                'b',
+                null,
+                this.props.dataSource
+              ),
+              this.props.dataMeasureUnit
+            ),
+            React.createElement(
+              'h4',
+              { className: 'card-title' },
+              this.props.dataName
+            )
+          ),
+          React.createElement(
+            'div',
+            { className: 'card-body' },
+            React.createElement(
+              'div',
+              { className: 'chart-area' },
+              React.createElement('canvas', { ref: this.canvasRef })
+            )
+          ),
+          React.createElement(
+            'div',
+            { className: 'card-footer' },
+            React.createElement(
+              'div',
+              { className: 'stats' },
+              React.createElement('i', { className: 'now-ui-icons arrows-1_refresh-69' }),
+              ' Em tempo real'
+            )
+          )
+        )
+      );
     }
   }]);
 

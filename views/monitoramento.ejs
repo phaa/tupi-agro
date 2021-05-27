@@ -11,7 +11,6 @@
   
 </div>
 
-<script src="/socket.io/socket.io.js" charset="utf-8"></script>
 <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js" integrity="sha512-bZS47S7sPOxkjU/4Bt0zrhEtWx0y0CRkhEp8IckzK+ltifIIE9EMIMTuT/mEzoIMewUINruDBIR/jJnbguonqQ==" crossorigin="anonymous"></script>
@@ -184,37 +183,4 @@ function addData(chart, label, data) {
   });
   chart.update();
 }
-</script>
-<script>
-  $(document).ready(function() {
-
-    const socket = io();
-
-    // Solicita os dados do arduino ao servidor
-    socket.emit("messageToArduino", {topic: "tupi/agro/estufa", message: "GET_ARDUINO_STATE"});
-
-    socket.on('newData', function(data) {
-      const { soilMoisture, airTemp, airHumidity } = data;
-      addData(graficoTemperaturaAr, airTemp, airTemp);
-      addData(graficoUmidadeAr, airHumidity, airHumidity);
-      addData(graficoUmidadeSolo, soilMoisture, soilMoisture);
-      $('#umidadeSolo').text(soilMoisture);
-      $('#umidadeAr').text(airHumidity);
-      $('#temperaturaAr').text(airTemp);
-    });
-
-    /**
-     * Quando o MQTT client no servidor recebe uma confirmação de que 
-     * o microcontrolador modificou seu estado seja na bomba, exaustão ou IA.
-     * Altera a UI do sistema de acordo com o retorno
-    */
-    socket.on('confirmUI', function(data) {
-      changeUI(data);
-      console.log("Confirm UI")
-    });
-
-    
-  });
-  
-  
 </script>

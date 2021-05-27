@@ -21,10 +21,11 @@ const app = express();
 const server = http.createServer(app);
 
 // Socket.io
-const io = require("socket.io")(server);
+//const io = require("socket.io")(server);
 
 // MQTT
-const boardController = require("./config/board-controller")(io);
+const boardController = require("./config/board-controller")();
+
 //const mqttClient = new mqttHandler(io);
 
   // Importação de rotas
@@ -101,7 +102,8 @@ const onListening = () => {
  */
 async function main() {
   await mongoStarter.connect('pedro', 'mclaren2018', 'estufas');
-  boardController.setup();
+  boardController.begin(30);
+  boardController.checkIrrigationTask();
   
   // Configuraçâo das views 
   app.set('views', path.join(__dirname, 'views'));
@@ -141,7 +143,7 @@ async function main() {
   app.use('/users', usersRouter);
 
   // Configuração das rotas da api
-  require('./routes/api')(app, io);
+  //require('./routes/api')(app, io);
   //app.use('/api', apiRouter.router);
 
   // Captura um 404 e envia ao gerenciador de erros

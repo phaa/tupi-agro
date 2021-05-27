@@ -1,106 +1,69 @@
 <div class="row">
-  <div class="col-lg-6 col-md-6">
+  <div class="col-lg-4 col-md-4">
     <div class="card">
       <div class="card-header">
-        <h5 class="card-category">Detalhamento</h5>
-        <h4 class="card-title"> Últimas 24 horas</h4>
+        <h5 class="card-category">Fertirrigação (Dia/Mês)</h5>
+        <h4 class="card-title">Agendamentos</h4>
       </div>
       <div class="card-body">
         <div class="table-responsive">
           <table class="table">
             <thead class=" text-primary">
               <th>
-                Hora
+                Início
               </th>
               <th>
-                Duração
+                Fim
               </th>
-              <th>
-                Litros
-              </th>
+              <!--th>
+                Executado
+              </th-->
               <th class="text-right">
-                Fertirrigação
+                Ativo
               </th>
             </thead>
             <tbody>
-              <tr>
-                <td>
-                  7:15
-                </td>
-                <td>
-                  45 min
-                </td>
-                <td>
-                  300l
-                </td>
-                <td class="text-right text-success">
-                  Sim
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  11:06
-                </td>
-                <td>
-                  62 min
-                </td>
-                <td>
-                  756l
-                </td>
-                <td class="text-right text-danger">
-                  Não
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  12:42
-                </td>
-                <td>
-                  30 min
-                </td>
-                <td>
-                  452l
-                </td>
-                <td class="text-right text-danger">
-                  Não
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  15:33
-                </td>
-                <td>
-                  20 min
-                </td>
-                <td>
-                  503l
-                </td>
-                <td class="text-right text-success">
-                  Sim
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  18:00
-                </td>
-                <td>
-                  10 min
-                </td>
-                <td>
-                  300l
-                </td>
-                <td class="text-right text-success">
-                  Sim
-                </td>
-              </tr>
+              <% schedulings.forEach(function(scheduling) { %>
+                <tr>
+                  <td>
+                    <%= scheduling.executeOn %>
+                  </td>
+                  <td>
+                    <%= scheduling.stopOn %>
+                  </td>
+                  <td class="text-right <%= scheduling.active ? "text-success" : "text-danger" %>">
+                    <%= scheduling.active ? "Sim" : "Não" %>
+                  </td>
+                </tr>
+              <% }); %> 
+              
             </tbody>
           </table>
         </div>
+        <form class="" action="/inicio" method="POST">
+          <div class="row">
+            <div class="col pr-1">
+              <div class="form-group">
+                <label>Início</label>
+                <input type="time" name="time1" class="form-control" placeholder="" value="">
+              </div>
+            </div>
+            <div class="col pl-1">
+              <div class="form-group">
+                <label>Fim</label>
+                <input type="time" name="time2" class="form-control" placeholder="" value="">
+              </div>
+            </div>
+            
+          </div>
+          <input class="btn btn-success" type="submit" value="Agendar">
+          
+        </form>
       </div>
     </div>
   </div>
   <div class="col-lg-6 col-md-6">
-    <div class="card  card-tasks">
+    <div class="card card-tasks">
       <div class="card-header ">
         <h5 class="card-category">Backend development</h5>
         <h4 class="card-title">Visão Geral</h4>

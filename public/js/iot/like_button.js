@@ -58,6 +58,7 @@ class ControlsManager extends React.Component {
       airHumidity: data.airHumidity,
       airTemperature: data.airTemperature,
       soilMoisture: data.soilMoisture,
+      lastCheck: new Date().getTime(),
     });
   }
 
@@ -121,68 +122,14 @@ class ControlsManager extends React.Component {
           <Card cardTitle={"Controle de Fertirrigação"} 
           toggleFlag1={this.state.automaticFertirrigation} callback1={this.toggleAutomaticFertirrigation} 
           toggleFlag2={this.state.fertirrigationState} callback2={this.toggleFertirrigation}/>
+          <LineChart lastCheck={this.state.lastCheck} color={"#18ce0f"}
+          dataSource={this.state.soilMoisture} dataName={"Umidade do solo"} dataMeasureUnit={"%"}/>
+          <LineChart lastCheck={this.state.lastCheck} color={"#f96332"}
+          dataSource={this.state.airTemperature} dataName={"Temperatura do ar"} dataMeasureUnit={"°C"}/>
+          <LineChart lastCheck={this.state.lastCheck} color={"#2CA8FF"}
+          dataSource={this.state.airHumidity} dataName={"Umidade do ar"} dataMeasureUnit={"%"}/>
         </div>
-        <LineChart
-          data={[]}
-          title={[]}
-          color="#70CAD1"
-        />
-        <div className="row"> 
-          <div class="col-lg-12 col-md-12">
-            <div class="card card-chart">
-              <div class="card-header">
-                <h5 class="card-category"><b>{this.state.soilMoisture}</b>%</h5>
-                <h4 class="card-title">Umidade do solo</h4>
-              </div>
-              <div class="card-body">
-                <div class="chart-area">
-                  <canvas ref={this.soilMoistureChart}></canvas>
-                </div>
-              </div>
-              <div class="card-footer">
-                <div class="stats">
-                  <i class="now-ui-icons arrows-1_refresh-69"></i> Em tempo real
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-12 col-md-12">
-            <div class="card card-chart">
-              <div class="card-header">
-                <h5 class="card-category"><b>{this.state.airTemperature}</b>°C</h5>
-                <h4 class="card-title">Temperatura do ar</h4>
-              </div>
-              <div class="card-body">
-                <div class="chart-area">
-                  <canvas ref={this.airTemperatureChart}></canvas>
-                </div>
-              </div>
-              <div class="card-footer">
-                <div class="stats">
-                  <i class="now-ui-icons arrows-1_refresh-69"></i> Em tempo real
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-12 col-md-12">
-            <div class="card card-chart">
-              <div class="card-header">
-                <h5 class="card-category"><b>{this.state.airHumidity}</b>%</h5>
-                <h4 class="card-title">Umidade do ar</h4>
-              </div>
-              <div class="card-body">
-                <div class="chart-area">
-                  <canvas ref={this.airHumidityChart}></canvas>
-                </div>
-              </div>
-              <div class="card-footer">
-                <div class="stats">
-                  <i class="now-ui-icons arrows-1_refresh-69"></i> Em tempo real
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        
       </div>
     );
   }
@@ -248,7 +195,21 @@ class LineChart extends React.Component {
   constructor(props) {
     super(props);
     this.canvasRef = React.createRef();
-    this.chartConfiguration = {
+  }
+
+  componentDidMount() {
+    let chartColor = "#FFFFFF";
+    let ctx = this.canvasRef.current.getContext("2d");
+
+    let gradientStroke = ctx.createLinearGradient(500, 0, 100, 0);
+    gradientStroke.addColorStop(0, this.props.color);
+    gradientStroke.addColorStop(1, chartColor);
+
+    let gradientFill = ctx.createLinearGradient(0, 170, 0, 50);
+    gradientFill.addColorStop(0, "rgba(128, 182, 244, 0)");
+    gradientFill.addColorStop(1, hexToRGB(this.props.color, 0.4));
+
+    let chartConfiguration = {
       maintainAspectRatio: false,
       legend: {
         display: false
@@ -265,13 +226,16 @@ class LineChart extends React.Component {
       responsive: true,
       scales: {
         yAxes: [{
+          ticks: {
+            precision: 0
+          },
           gridLines: 0,
           gridLines: {
             zeroLineColor: "transparent",
             drawBorder: false
-          }
+          },
         }],
-        xAxes: [{
+        xAxes:  [{
           display: 0,
           gridLines: 0,
           ticks: {
@@ -287,45 +251,75 @@ class LineChart extends React.Component {
       },
       layout: {
         padding: {
-          left: 0,
-          right: 0,
+          left: 15,
+          right:15,
           top: 15,
           bottom: 15
         }
       }
     };
-  }
 
-  componentDidMount() {
-    this.myChart = new Chart(this.canvasRef.current, {
-      type: 'bar',
+    this.myChart = new Chart(ctx, {
+      type: 'line',
+      responsive: false,
       data: {
-        // labels: [0,],
-        labels: this.props.data.map(d => d.label),
+        labels: new Array(),
         datasets: [{
-          label: this.props.title,
-          data: this.props.data.map(d => d.value),
-          backgroundColor: this.props.color,
-          borderColor: "#18ce0f",
+          label: "Leitura (%)",
+          borderColor: this.props.color,
           pointBorderColor: "#FFF",
-          pointBackgroundColor: "#18ce0f",
+          pointBackgroundColor: this.props.color,
           pointBorderWidth: 2,
           pointHoverRadius: 4,
           pointHoverBorderWidth: 1,
           pointRadius: 4,
           fill: true,
-          //backgroundColor: gradientFill,
+          backgroundColor: gradientFill,
           borderWidth: 2,
+          data: new Array()
         }]
       },
-      options: this.chartConfiguration
+      options: chartConfiguration
+    });
+
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.lastCheck !== this.props.lastCheck) {
+      this.addData(this.props.dataSource, this.props.dataSource);
     }
-    );
+  }
+
+  addData(label, data) {
+    this.myChart.data.labels.push(label);
+    if(this.myChart.data.labels.length >= 9) { this.myChart.data.labels.shift(); }
+    this.myChart.data.datasets.forEach((dataset) => {
+      dataset.data.push(data);
+      if(dataset.data.length >= 9) { dataset.data.shift(); }
+    });
+    this.myChart.update();
   }
 
   render() {
     return (
-      <canvas ref={this.canvasRef} />
+    <div className="col-lg-12 col-md-12">
+      <div className="card card-chart">
+        <div className="card-header">
+          <h5 className="card-category"><b>{this.props.dataSource}</b>{this.props.dataMeasureUnit}</h5>
+          <h4 className="card-title">{this.props.dataName}</h4>
+        </div>
+        <div className="card-body">
+          <div className="chart-area">
+            <canvas ref={this.canvasRef} />
+          </div>
+        </div>
+        <div className="card-footer">
+          <div className="stats">
+            <i className="now-ui-icons arrows-1_refresh-69"></i> Em tempo real
+          </div>
+        </div>
+      </div>
+    </div>
     );
   }
 }
