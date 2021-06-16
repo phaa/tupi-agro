@@ -1,5 +1,5 @@
 <div class="row">
-  <div class="col-lg-4 col-md-4">
+  <div class="col-lg-5 col-md-5">
     <div class="card">
       <div class="card-header">
         <h5 class="card-category">Fertirrigação (Dia/Mês)</h5>
@@ -15,9 +15,9 @@
               <th>
                 Fim
               </th>
-              <!--th>
-                Executado
-              </th-->
+              <th>
+                Seção
+              </th>
               <th class="text-right">
                 Ativo
               </th>
@@ -31,8 +31,16 @@
                   <td>
                     <%= scheduling.stopOn %>
                   </td>
+                  <td class="text-center">
+                    <%= scheduling.section %>
+                  </td>
                   <td class="text-right <%= scheduling.active ? "text-success" : "text-danger" %>">
                     <%= scheduling.active ? "Sim" : "Não" %>
+                  </td>
+                  <td>
+                    <a type="button" rel="tooltip" href="/inicio/del_horario/<%=scheduling._id%>" title="Apagar" class="btn btn-danger btn-round btn-icon btn-icon-mini btn-neutral" data-original-title="Remove">
+                      <i class="now-ui-icons ui-1_simple-remove"></i>
+                    </a>
                   </td>
                 </tr>
               <% }); %> 
@@ -48,10 +56,16 @@
                 <input type="time" name="time1" class="form-control" placeholder="" value="">
               </div>
             </div>
-            <div class="col pl-1">
+            <div class="col">
               <div class="form-group">
                 <label>Fim</label>
                 <input type="time" name="time2" class="form-control" placeholder="" value="">
+              </div>
+            </div>
+            <div class="col pl-1">
+              <div class="form-group">
+                <label>Seção</label>
+                <input type="number" name="section" class="form-control" placeholder="" value="">
               </div>
             </div>
             
@@ -65,7 +79,7 @@
   <div class="col-lg-6 col-md-6">
     <div class="card card-tasks">
       <div class="card-header ">
-        <h5 class="card-category">Backend development</h5>
+        <h5 class="card-category">Em breve</h5>
         <h4 class="card-title">Visão Geral</h4>
       </div>
       <div class="card-body ">
@@ -81,7 +95,7 @@
                     </label>
                   </div>
                 </td>
-                <td class="text-left">Sign contract for "What are conference organizers afraid of?"</td>
+                <td class="text-left">Texto</td>
                 <td class="td-actions text-right">
                   <button type="button" rel="tooltip" title="" class="btn btn-info btn-round btn-icon btn-icon-mini btn-neutral" data-original-title="Edit Task">
                   <i class="now-ui-icons ui-2_settings-90"></i>
@@ -100,7 +114,7 @@
                     </label>
                   </div>
                 </td>
-                <td class="text-left">Lines From Great Russian Literature? Or E-mails From My Boss?</td>
+                <td class="text-left">Texto</td>
                 <td class="td-actions text-right">
                   <button type="button" rel="tooltip" title="" class="btn btn-info btn-round btn-icon btn-icon-mini btn-neutral" data-original-title="Edit Task">
                   <i class="now-ui-icons ui-2_settings-90"></i>
@@ -119,7 +133,7 @@
                     </label>
                   </div>
                 </td>
-                <td class="text-left">Flooded: One year later, assessing what was lost and what was found when a ravaging rain swept through metro Detroit
+                <td class="text-left">Texto
                 </td>
                 <td class="td-actions text-right">
                   <button type="button" rel="tooltip" title="" class="btn btn-info btn-round btn-icon btn-icon-mini btn-neutral" data-original-title="Edit Task">

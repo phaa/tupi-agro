@@ -33,22 +33,14 @@ router.get('/inicio', ensureAuthenticated, (req, res) => {
 });
 
 router.post('/inicio', ensureAuthenticated, (req, res) => {
-  const { time1, time2 } = req.body;
-
-  /*let start = new Date(1970,1,1);
-  start.setHours(time1.substring(0,2),time1.substring(3,5));
-  console.log(start)
-
-  let end = new Date(1970,1,1);
-  end.setHours(time2.substring(0,2),time2.substring(3,5));
-  console.log(end)*/
+  const { time1, time2, section } = req.body;
   
   const newScheduling = new Scheduling({
     taskType: 'FERTIRRIGATION',
     executeOn: time1+":00",
     stopOn: time2+":00",
     active: false,
-    complete: 'Não'
+    section: section,
   });
 
   newScheduling.save()
@@ -56,6 +48,13 @@ router.post('/inicio', ensureAuthenticated, (req, res) => {
     res.redirect('/inicio');
   })
  
+});
+
+router.get('/inicio/del_horario/:id', ensureAuthenticated, (req, res) => {
+  Scheduling.deleteOne({ _id: req.params.id }, (err) => {
+    res.redirect('/inicio');
+    if (err) return handleError(err);
+  });
 });
 
 router.get('/monitoramento', ensureAuthenticated, (req, res) => {

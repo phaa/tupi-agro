@@ -63,7 +63,7 @@ class ControlsManager extends React.Component {
   }
 
   getGreenhouseData() {
-    axios.get(`http://192.168.0.108/greenhouse`)
+    axios.get(`http://192.168.0.144/greenhouse`)
       .then(res => {
         this.unpackGreenhouseData(res.data);
         document.body.classList.add('loaded');
@@ -79,34 +79,34 @@ class ControlsManager extends React.Component {
   toggleAutomaticIrrigation(state) {
     if (state) { state = 1; } else {state = 0}
     //this.setState({ automaticIrrigation: state });
-    axios.get(`http://192.168.0.108/command?automaticIrrigation=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
+    axios.get(`http://192.168.0.144/command?automaticIrrigation=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
   }
 
   toggleAutomaticExausting(state) {
     if (state) { state = 1; } else {state = 0}
     //this.setState({ automaticExausting: state });
-    axios.get(`http://192.168.0.108/command?automaticExausting=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
+    axios.get(`http://192.168.0.144/command?automaticExausting=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
   }
 
   toggleAutomaticFertirrigation(state) {
     if (state) { state = 1; } else {state = 0}
     //this.setState({ automaticFertirrigation: state });
-    axios.get(`http://192.168.0.108/command?automaticFertirrigation=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
+    axios.get(`http://192.168.0.144/command?automaticFertirrigation=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
   }
 
   togglePump(state) {
     if (state) { state = 1; } else {state = 0}
-    axios.get(`http://192.168.0.108/command?pump=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
+    axios.get(`http://192.168.0.144/command?pump=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
   }
 
   toggleExaust(state) {
     if (state) { state = 1; } else {state = 0}
-    axios.get(`http://192.168.0.108/command?exaust=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
+    axios.get(`http://192.168.0.144/command?exaust=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
   }
 
   toggleFertirrigation(state) {
     if (state) { state = 1; } else {state = 0}
-    axios.get(`http://192.168.0.108/command?fertirrigation=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
+    axios.get(`http://192.168.0.144/command?fertirrigation=${state}`).then(res => { this.unpackGreenhouseData(res.data) });
   }
 
   render() {
@@ -116,16 +116,21 @@ class ControlsManager extends React.Component {
           <Card cardTitle={"Controle de Irrigação"} 
           toggleFlag1={this.state.automaticIrrigation} callback1={this.toggleAutomaticIrrigation} 
           toggleFlag2={this.state.pumpState} callback2={this.togglePump}/>
+          
           <Card cardTitle={"Controle de Exaustão"} 
           toggleFlag1={this.state.automaticExausting} callback1={this.toggleAutomaticExausting} 
           toggleFlag2={this.state.exaustingState} callback2={this.toggleExaust}/>
+          
           <Card cardTitle={"Controle de Fertirrigação"} 
           toggleFlag1={this.state.automaticFertirrigation} callback1={this.toggleAutomaticFertirrigation} 
           toggleFlag2={this.state.fertirrigationState} callback2={this.toggleFertirrigation}/>
+          
           <LineChart lastCheck={this.state.lastCheck} color={"#18ce0f"}
           dataSource={this.state.soilMoisture} dataName={"Umidade do solo"} dataMeasureUnit={"%"}/>
+          
           <LineChart lastCheck={this.state.lastCheck} color={"#f96332"}
           dataSource={this.state.airTemperature} dataName={"Temperatura do ar"} dataMeasureUnit={"°C"}/>
+          
           <LineChart lastCheck={this.state.lastCheck} color={"#2CA8FF"}
           dataSource={this.state.airHumidity} dataName={"Umidade do ar"} dataMeasureUnit={"%"}/>
         </div>

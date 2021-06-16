@@ -4,9 +4,9 @@ const schedulingSchema = new mongoose.Schema({
     executeOn: { type: String },
     stopOn: { type: String },
     active: { type: Boolean },
-    complete: { type: String, enum: ['Sim', 'Não'] },
+    section: { type: Number},
   });
-schedulingSchema.index({ executeOn: -1 });
+//schedulingSchema.index({ executeOn: -1 });
 
 const Scheduling = new mongoose.model('scheduling', schedulingSchema);
 module.exports = Scheduling;

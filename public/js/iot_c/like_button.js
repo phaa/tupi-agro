@@ -88,7 +88,7 @@ var ControlsManager = function (_React$Component) {
     value: function getGreenhouseData() {
       var _this3 = this;
 
-      axios.get('http://192.168.0.108/greenhouse').then(function (res) {
+      axios.get('http://192.168.0.144/greenhouse').then(function (res) {
         _this3.unpackGreenhouseData(res.data);
         document.body.classList.add('loaded');
       }).catch(function (error) {
@@ -109,7 +109,7 @@ var ControlsManager = function (_React$Component) {
         state = 0;
       }
       //this.setState({ automaticIrrigation: state });
-      axios.get('http://192.168.0.108/command?automaticIrrigation=' + state).then(function (res) {
+      axios.get('http://192.168.0.144/command?automaticIrrigation=' + state).then(function (res) {
         _this4.unpackGreenhouseData(res.data);
       });
     }
@@ -124,7 +124,7 @@ var ControlsManager = function (_React$Component) {
         state = 0;
       }
       //this.setState({ automaticExausting: state });
-      axios.get('http://192.168.0.108/command?automaticExausting=' + state).then(function (res) {
+      axios.get('http://192.168.0.144/command?automaticExausting=' + state).then(function (res) {
         _this5.unpackGreenhouseData(res.data);
       });
     }
@@ -139,7 +139,7 @@ var ControlsManager = function (_React$Component) {
         state = 0;
       }
       //this.setState({ automaticFertirrigation: state });
-      axios.get('http://192.168.0.108/command?automaticFertirrigation=' + state).then(function (res) {
+      axios.get('http://192.168.0.144/command?automaticFertirrigation=' + state).then(function (res) {
         _this6.unpackGreenhouseData(res.data);
       });
     }
@@ -153,7 +153,7 @@ var ControlsManager = function (_React$Component) {
       } else {
         state = 0;
       }
-      axios.get('http://192.168.0.108/command?pump=' + state).then(function (res) {
+      axios.get('http://192.168.0.144/command?pump=' + state).then(function (res) {
         _this7.unpackGreenhouseData(res.data);
       });
     }
@@ -167,7 +167,7 @@ var ControlsManager = function (_React$Component) {
       } else {
         state = 0;
       }
-      axios.get('http://192.168.0.108/command?exaust=' + state).then(function (res) {
+      axios.get('http://192.168.0.144/command?exaust=' + state).then(function (res) {
         _this8.unpackGreenhouseData(res.data);
       });
     }
@@ -181,7 +181,7 @@ var ControlsManager = function (_React$Component) {
       } else {
         state = 0;
       }
-      axios.get('http://192.168.0.108/command?fertirrigation=' + state).then(function (res) {
+      axios.get('http://192.168.0.144/command?fertirrigation=' + state).then(function (res) {
         _this9.unpackGreenhouseData(res.data);
       });
     }
