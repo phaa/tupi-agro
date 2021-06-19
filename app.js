@@ -23,7 +23,7 @@ const server = http.createServer(app);
 // Socket.io
 //const io = require("socket.io")(server);
 
-// MQTT
+// Controlador MCU
 const boardController = require("./config/board-controller")();
 
 //const mqttClient = new mqttHandler(io);
@@ -101,9 +101,12 @@ const onListening = () => {
  * Espera a inicializaçâo e conexão do Mongo para prosseguir
  */
 async function main() {
+  // Adicionar a um .env
   await mongoStarter.connect('pedro', 'mclaren2018', 'estufas');
+  
+  // Encapsulador da comunicação entre o servidor e a MCU
   boardController.begin(30);
-  boardController.checkIrrigationTask();
+  boardController.beginIrrigationSchedulesChecker();
   
   // Configuraçâo das views 
   app.set('views', path.join(__dirname, 'views'));
@@ -112,7 +115,7 @@ async function main() {
   app.set("layout extractScripts", true);
   app.set('layout', 'layouts/layout');
 
-  app.use(logger('dev'));
+  //app.use(logger('dev'));
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
   app.use(cookieParser());

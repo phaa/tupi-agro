@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
+
 const Rule = require("../models/greenhouse-rules");
 const Scheduling = require("../models/scheduling");
+
 const { ensureAuthenticated } = require("../config/auth.js");
 
 // Página de login
@@ -14,6 +16,10 @@ router.get('/register', (req, res) => {
   res.render('register');
 });
 
+
+/**
+ * Página inicial
+ */
 router.get('/inicio', ensureAuthenticated, (req, res) => {
   Scheduling.find({}).sort({executeOn: 'ascending'}).exec((err, schedules) => {
     let schedulingsMap = [];
@@ -43,8 +49,7 @@ router.post('/inicio', ensureAuthenticated, (req, res) => {
     section: section,
   });
 
-  newScheduling.save()
-  .then(value => {
+  newScheduling.save().then(value => {
     res.redirect('/inicio');
   })
  
@@ -57,6 +62,9 @@ router.get('/inicio/del_horario/:id', ensureAuthenticated, (req, res) => {
   });
 });
 
+/**
+ * Monitoramento
+ */
 router.get('/monitoramento', ensureAuthenticated, (req, res) => {
   res.render('monitoramento',{
     user: req.user,

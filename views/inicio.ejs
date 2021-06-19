@@ -1,5 +1,5 @@
 <div class="row">
-  <div class="col-lg-5 col-md-5">
+  <div class="col-lg-6 col-md-6">
     <div class="card">
       <div class="card-header">
         <h5 class="card-category">Fertirrigação (Dia/Mês)</h5>
@@ -48,24 +48,24 @@
             </tbody>
           </table>
         </div>
-        <form class="" action="/inicio" method="POST">
+        <form action="/inicio" method="POST">
           <div class="row">
             <div class="col pr-1">
               <div class="form-group">
                 <label>Início</label>
-                <input type="time" name="time1" class="form-control" placeholder="" value="">
+                <input type="time" name="time1" class="form-control" placeholder="" value="" required>
               </div>
             </div>
             <div class="col">
               <div class="form-group">
                 <label>Fim</label>
-                <input type="time" name="time2" class="form-control" placeholder="" value="">
+                <input type="time" name="time2" class="form-control" placeholder="" value="" required>
               </div>
             </div>
             <div class="col pl-1">
               <div class="form-group">
                 <label>Seção</label>
-                <input type="number" name="section" class="form-control" placeholder="" value="">
+                <input type="number" name="section" class="form-control" placeholder="" value="" required>
               </div>
             </div>
             
@@ -79,8 +79,8 @@
   <div class="col-lg-6 col-md-6">
     <div class="card card-tasks">
       <div class="card-header ">
-        <h5 class="card-category">Em breve</h5>
-        <h4 class="card-title">Visão Geral</h4>
+        <h5 class="card-category">Visão Geral</h5>
+        <h4 class="card-title">Histórico de irrigações</h4>
       </div>
       <div class="card-body ">
         <div class="table-full-width table-responsive">
@@ -95,7 +95,7 @@
                     </label>
                   </div>
                 </td>
-                <td class="text-left">Texto</td>
+                <td class="text-left">Adicionar histórico das irrigações que foram bem sucedidas ou não</td>
                 <td class="td-actions text-right">
                   <button type="button" rel="tooltip" title="" class="btn btn-info btn-round btn-icon btn-icon-mini btn-neutral" data-original-title="Edit Task">
                   <i class="now-ui-icons ui-2_settings-90"></i>
