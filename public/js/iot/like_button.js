@@ -1,5 +1,9 @@
 'use strict';
 
+/**
+ * Classe que gerencia o cliente Web do servidor MCU
+ */
+
 class ControlsManager extends React.Component {
 
   constructor(props) {

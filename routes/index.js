@@ -40,7 +40,7 @@ router.get('/inicio', ensureAuthenticated, (req, res) => {
 
 router.post('/inicio', ensureAuthenticated, (req, res) => {
   const { time1, time2, section } = req.body;
-  
+
   const newScheduling = new Scheduling({
     taskType: 'FERTIRRIGATION',
     executeOn: time1+":00",
@@ -51,7 +51,7 @@ router.post('/inicio', ensureAuthenticated, (req, res) => {
 
   newScheduling.save().then(value => {
     res.redirect('/inicio');
-  })
+  });
  
 });
 

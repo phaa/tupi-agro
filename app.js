@@ -35,7 +35,7 @@ const usersRouter = require('./routes/users');
 
 // Autenticação
 const passport = require('passport');
-const passportConfigure = require('./config/passport')(passport);
+require('./config/passport')(passport);
 
 // Banco de dados
 const mongoStarter = require('./database/mongo-connection');
@@ -105,8 +105,8 @@ async function main() {
   await mongoStarter.connect('pedro', 'mclaren2018', 'estufas');
   
   // Encapsulador da comunicação entre o servidor e a MCU
-  boardController.begin(30);
-  boardController.beginIrrigationSchedulesChecker();
+  boardController.begin();
+  boardController.beginSchedulingsChecker();
   
   // Configuraçâo das views 
   app.set('views', path.join(__dirname, 'views'));
