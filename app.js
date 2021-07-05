@@ -106,7 +106,7 @@ async function main() {
   
   // Encapsulador da comunicação entre o servidor e a MCU
   boardController.begin();
-  boardController.beginSchedulingsChecker();
+  boardController.beginSchedulingLoop();
   
   // Configuraçâo das views 
   app.set('views', path.join(__dirname, 'views'));

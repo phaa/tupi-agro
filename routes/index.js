@@ -23,6 +23,7 @@ router.get('/register', (req, res) => {
 router.get('/inicio', ensureAuthenticated, (req, res) => {
   Scheduling.find({}).sort({executeOn: 'ascending'}).exec((err, schedules) => {
     let schedulingsMap = [];
+    let historicsMap = [];
 
     schedules.forEach(schedule => {
       schedulingsMap.push(schedule)
@@ -42,12 +43,13 @@ router.post('/inicio', ensureAuthenticated, (req, res) => {
   const { time1, time2, section } = req.body;
 
   const newScheduling = new Scheduling({
-    taskType: 'FERTIRRIGATION',
     executeOn: time1+":00",
     stopOn: time2+":00",
     active: false,
     section: section,
   });
+
+  // Verificar se já existe um scheduling nesse horario
 
   newScheduling.save().then(value => {
     res.redirect('/inicio');

@@ -105,25 +105,42 @@ void setup() {
     //AsyncWebParameter* p = request->getParam("download");
     //p->name().c_str() p->value().c_str();
 
+    short err = 0;
+
     if (request->hasParam("pump")) {
       String pumpParam = request->getParam("pump")->value();
-      pumpState = (pumpParam.toInt()) ? HIGH : LOW;
-      DEBUG_PRINT("Bomba: ");
-      DEBUG_PRINTLN(pumpState);
+
+      if (automaticIrrigation == LOW) {
+        err++;
+      } else {
+        pumpState = (pumpParam.toInt()) ? HIGH : LOW;
+        DEBUG_PRINT("Bomba: ");
+        DEBUG_PRINTLN(pumpState);
+      }
     }
 
     if (request->hasParam("exaust")) {
       String exaustParam = request->getParam("exaust")->value();
-      exaustingState = (exaustParam.toInt()) ? HIGH : LOW;
-      DEBUG_PRINT("Exaustão: ");
-      DEBUG_PRINTLN(exaustingState);
+
+      if (automaticExausting == LOW) {
+        err++;
+      } else {
+        exaustingState = (exaustParam.toInt()) ? HIGH : LOW;
+        DEBUG_PRINT("Exaustão: ");
+        DEBUG_PRINTLN(exaustingState);
+      }
     }
 
     if (request->hasParam("fertirrigation")) {
       String fertirrigationParam = request->getParam("fertirrigation")->value();
-      fertirrigationState = (fertirrigationParam.toInt()) ? HIGH : LOW;
-      DEBUG_PRINT("Fertirrigação: ");
-      DEBUG_PRINTLN(fertirrigationState);
+
+      if (automaticExausting == LOW) {
+        err++;
+      } else {
+        fertirrigationState = (fertirrigationParam.toInt()) ? HIGH : LOW;
+        DEBUG_PRINT("Fertirrigação: ");
+        DEBUG_PRINTLN(fertirrigationState);
+      }
     }
 
     if (request->hasParam("automaticIrrigation")) {
@@ -147,7 +164,19 @@ void setup() {
       DEBUG_PRINTLN(automaticFertirrigation);
     }
 
-    serializeGreenhouseStats(response);
+    // if err > 0 { denyChange() }
+
+    if(err > 0) {
+      DynamicJsonDocument status(30);
+
+      status["error"] = "forbidden";
+
+      serializeJson(status, *response);
+    } else {
+      serializeGreenhouseStats(response);
+    }
+
+    
     request->send(response);
   });
 
@@ -195,12 +224,12 @@ void checkGreenhouse() {
   airTemperature = round(DHT.temperature);
 
   // Normaliza a entrada do sensor
-  /*if (soilMoisture > 100) {
+  if (soilMoisture > 100) {
     soilMoisture = 100;
   }
   else if (soilMoisture < 0) {
     soilMoisture = 0;
-  }*/
+  }
 
   // if automatic          obs: fertirrigationState
   /*
@@ -212,7 +241,7 @@ void checkGreenhouse() {
     else if (soilMoisture >= MINIMUM_OPTIMAL_MOISTURE || pumpState == LOW) {
       pumpState = LOW;
     }
-  }*/
+  }
 
   if (automaticExausting) {
     // Gerencia a exaustão
@@ -222,7 +251,7 @@ void checkGreenhouse() {
     else if (airTemperature <= OPTIMAL_AIR_TEMPERATURE || exaustingState == LOW) {
       exaustingState = LOW;
     }
-  }
+  }*/
 
 }
 

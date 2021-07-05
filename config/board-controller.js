@@ -1,5 +1,6 @@
 const axios = require('axios');
 const Scheduling = require("../models/scheduling");
+const Historic = require("../models/irrigation-historic");
 
 class BoardController {
 
@@ -14,7 +15,11 @@ class BoardController {
     console.log("Setou o interval");
   }
 
-  repeatEvery(func, interval) {
+  async beginSchedulingLoop() {
+    this.repeatEvery(this.loop, 60000); // A cada 1 minuto (60.000 milissegundos)
+  }
+
+  async repeatEvery(func, interval) {
     // Verifica a hora atual e calcula o delay até o proximo intervalo
     let now = new Date();
     let delay = interval - now % interval;
@@ -30,66 +35,69 @@ class BoardController {
     setTimeout(start, delay);
   }
 
-  async beginSchedulingsChecker() {
+  async loop() {
+    let now = new Date();
+    console.log(`Agora: ${now}`)
+    now.setSeconds(0); // Ignora os segundos
+    const nowString = now.toLocaleString().slice(11); // pega só o trecho da data
 
-    this.repeatEvery(async () => {
-      let now = new Date();
-      //console.log(`Agora: ${now}`)
-      now.setSeconds(0); // Aqui a gente ignora os segundos para fim de praticidade
-      const nowString = now.toLocaleString().slice(11); // pega só o trecho da data
+    const entryScheduling = await Scheduling.findOne({ executeOn: nowString }).exec();
 
-      const filters = {
-        $or: [{  executeOn: nowString }, { stopOn: nowString }]
-      };
-      const scheduling = await Scheduling.findOne(filters).exec(); //query.limit(1);
-      
-      if (scheduling) {
-        console.log("Encontrou scheduling")
+    if(entryScheduling) {
+      console.log(`Encontrou entry: ${entryScheduling.executeOn}`)
+      let historic = new Historic({
+        scheduling: entryScheduling._id,
+        error: false
+      });
 
-        // Verifica se a MCU está com a irrigação automática ligada
-        const greenhouseData = null;
-        try {
-          const section = scheduling.section;
-          greenhouseData = await axios.get("http://192.168.0.144/greenhouse?section=" + section);
-        } 
-        catch (error) {
-          if (error.request) {
-            /**
-             * A requisição foi feita, mas não foi recebida, 'error.request' é uma instância
-             * de XMLHttpRequest no navegador. No nodejs, é uma instância de http.ClientRequest
-             */
-            console.log("MCU desligada")
-          }
-          return;
-        }
+      let response = null;
 
-        // Se estiver no modo manual, ele ignora o agendamento
-        if (!greenhouseData.data.automaticIrrigation) { console.log("Não está no automático"); return; }
-
-        let pumpState = null;
-
-        if (scheduling.executeOn === nowString && scheduling.active != true) {
-          pumpState = true;
-        } 
-        else if (scheduling.stopOn === nowString && scheduling.active != false) {
-          pumpState = false;
-        }
-
-        try {
-          const response = await axios.get(`http://192.168.0.144/command?pump=${ (pumpState) ? 1 : 0 }&section=${section}`);
-          if (response) {
-            await Scheduling.updateOne({ _id: scheduling._id }, { active: pumpState });
-          }
-        }
-        catch (error) { 
-          if (error.request) {
-            console.log("MCU desligada")
-          }
-          return;
-        }// Fim do Try
+      try {
+        response = await axios.get(`http://192.168.0.144/command?pump=1&section=${ entryScheduling.section }`);
+        console.log("Enviou")
+      } 
+      catch (err){
+        console.log("Err: " + err)
       }
-    }, 60000); // A cada 1 minuto (60.000 milissegundos)
+
+      if (response.status == 200) {
+        historic.startDate = new Date();
+      } 
+      else if (response.data.error == "forbidden") {
+        historic.error = true;
+      }
+
+      await historic.save();
+    }
+
+
+    const endScheduling = await Scheduling.findOne({ stopOn: nowString }).exec();
+
+    if(endScheduling) {
+      console.log(`Encontrou end: ${endScheduling.stopOn}`)
+      let historic = await Historic.findOne({ scheduling: endScheduling._id }).sort({date: 'descending'}).exec();
+
+      let response = null; 
+
+      try{
+        response = await axios.get(`http://192.168.0.144/command?pump=0&section=${ endScheduling.section }`);
+        console.log("Enviou")
+      } 
+      catch (err) {
+        console.log("Err2: " + err)
+      }
+      
+      if (response.status == 200) {
+        historic.endDate = new Date();
+      } 
+      else if (response.data.error == "forbidden") {
+        historic.error = true;
+      }
+
+      await historic.save();
+    }
   }
+
 }
 
 module.exports = function() {
