@@ -4,23 +4,24 @@ const Historic = require("../models/irrigation-historic");
 
 class BoardController {
 
-  constructor() { }
+  constructor() { 
+    this.loop = this.loop.bind(this);
+    this.ip = "192.168.0.144";
+  }
 
   async begin() {
     const refreshTime = 30;
     setInterval(async () => {
-      const response = await axios.get("http://192.168.0.144/greenhouse");
+      const response = await axios.get("http://"+ this.ip +"/greenhouse");
       console.log("30 min, hora do DB: " + response.data);
     }, 1000 * 60 * refreshTime);
     console.log("Setou o interval");
   }
 
   async beginSchedulingLoop() {
-    this.repeatEvery(this.loop, 60000); // A cada 1 minuto (60.000 milissegundos)
-  }
-
-  async repeatEvery(func, interval) {
     // Verifica a hora atual e calcula o delay até o proximo intervalo
+    const func = this.loop;
+    const interval = 60000; // 1 min
     let now = new Date();
     let delay = interval - now % interval;
 
@@ -28,7 +29,7 @@ class BoardController {
         // Executa a função passada
         func();
         // ... E inicia a recursividade
-        this.repeatEvery(func, interval);
+        this.beginSchedulingLoop();
     }
 
     // Segura a execução até o momento certo
@@ -41,63 +42,94 @@ class BoardController {
     now.setSeconds(0); // Ignora os segundos
     const nowString = now.toLocaleString().slice(11); // pega só o trecho da data
 
+    const response = await axios.get("http://"+ this.ip +"/check");
+
+    if(response.status != 200) {
+      return;
+    }
+
+
     const entryScheduling = await Scheduling.findOne({ executeOn: nowString }).exec();
+    // or if scheduling has an error. So try again
 
     if(entryScheduling) {
       console.log(`Encontrou entry: ${entryScheduling.executeOn}`)
       let historic = new Historic({
-        scheduling: entryScheduling._id,
+        section: entryScheduling.section,
         error: false
       });
 
-      let response = null;
-
-      try {
-        response = await axios.get(`http://192.168.0.144/command?pump=1&section=${ entryScheduling.section }`);
-        console.log("Enviou")
-      } 
-      catch (err){
-        console.log("Err: " + err)
+      const now = new Date();
+      if (await this.turnPump(1, entryScheduling.section)) {
+        console.log("Entry historic deu certo")
+        entryScheduling.active = true;
+        historic.startDate = now;
       }
-
-      if (response.status == 200) {
-        historic.startDate = new Date();
-      } 
-      else if (response.data.error == "forbidden") {
+      else {
+        console.log("Entry historic deu errado")
+        historic.startDate = null;
+        historic.endDate = null;
         historic.error = true;
       }
 
-      await historic.save();
+      try {
+        await entryScheduling.save();
+        await historic.save();
+      } catch (error) {
+        console.log(error);
+      }
     }
-
 
     const endScheduling = await Scheduling.findOne({ stopOn: nowString }).exec();
 
     if(endScheduling) {
       console.log(`Encontrou end: ${endScheduling.stopOn}`)
-      let historic = await Historic.findOne({ scheduling: endScheduling._id }).sort({date: 'descending'}).exec();
+      let historic = await Historic.findOne({}).sort({'_id': -1}).exec();
+      console.log(`Encontrou historic: ${historic}`)
 
-      let response = null; 
-
-      try{
-        response = await axios.get(`http://192.168.0.144/command?pump=0&section=${ endScheduling.section }`);
-        console.log("Enviou")
-      } 
-      catch (err) {
-        console.log("Err2: " + err)
+      if (historic.error==true) {
+        console.log("Erro no end")
+        return;
       }
-      
-      if (response.status == 200) {
+
+      console.log("Passou do if")
+
+      if (await this.turnPump(0, endScheduling.section)) {
+        console.log("End historic deu certo")
         historic.endDate = new Date();
-      } 
-      else if (response.data.error == "forbidden") {
+        endScheduling.active = false;
+      }
+      else {
+        console.log("End historic deu errado")
         historic.error = true;
       }
 
-      await historic.save();
+      try {
+        await endScheduling.save();
+        await historic.save();
+      } catch (error) {
+        console.log(error);
+      }
     }
   }
 
+  async turnPump(mode, section) {
+
+    try {
+      let response = await axios.get("http://"+ this.ip +`/command?pump=${ mode }&section=${ section }`);
+      if (response.status == 200) {
+        console.log("Enviou")
+        return true;
+        
+      } 
+    }
+    catch (err) {
+      if (err || response.data.error == "forbidden") {
+        console.log("Erro")
+        return false;
+      }
+    }
+  }
 }
 
 module.exports = function() {

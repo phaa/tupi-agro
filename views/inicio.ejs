@@ -35,7 +35,7 @@
                     <%= scheduling.section %>
                   </td>
                   <td class="text-right <%= scheduling.active ? "text-success" : "text-danger" %>">
-                    <%= scheduling.active ? "Sim" : "Não" %>
+                    <b><%= scheduling.active ? "Sim" : "Não" %></b>
                   </td>
                   <td>
                     <a type="button" rel="tooltip" href="/inicio/del_horario/<%=scheduling._id%>" title="Apagar" class="btn btn-danger btn-round btn-icon btn-icon-mini btn-neutral" data-original-title="Remove">
@@ -77,73 +77,43 @@
     </div>
   </div>
   <div class="col-lg-6 col-md-6">
-    <div class="card card-tasks">
+    <div class="card "> <!--card-tasks-->
       <div class="card-header ">
         <h5 class="card-category">Visão Geral</h5>
-        <h4 class="card-title">Histórico de irrigações</h4>
+        <h4 class="card-title">Últimas 24h</h4>
       </div>
-      <div class="card-body ">
-        <div class="table-full-width table-responsive">
+      <div class="card-body">
+        <div class=" table-responsive"><!--table-full-width-->
           <table class="table">
+            <thead class=" text-primary">
+              <th>Início</th>
+              <th>Fim</th>
+              <th>Seção</th>
+              <th class="text-right"> Status</th>
+            </thead>
             <tbody>
-              <tr>
-                <td>
-                  <div class="form-check">
-                    <label class="form-check-label">
-                    <input class="form-check-input" type="checkbox" checked>
-                    <span class="form-check-sign"></span>
-                    </label>
-                  </div>
-                </td>
-                <td class="text-left">Adicionar histórico das irrigações que foram bem sucedidas ou não</td>
-                <td class="td-actions text-right">
-                  <button type="button" rel="tooltip" title="" class="btn btn-info btn-round btn-icon btn-icon-mini btn-neutral" data-original-title="Edit Task">
-                  <i class="now-ui-icons ui-2_settings-90"></i>
-                  </button>
-                  <button type="button" rel="tooltip" title="" class="btn btn-danger btn-round btn-icon btn-icon-mini btn-neutral" data-original-title="Remove">
-                  <i class="now-ui-icons ui-1_simple-remove"></i>
-                  </button>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="form-check">
-                    <label class="form-check-label">
-                    <input class="form-check-input" type="checkbox">
-                    <span class="form-check-sign"></span>
-                    </label>
-                  </div>
-                </td>
-                <td class="text-left">Texto</td>
-                <td class="td-actions text-right">
-                  <button type="button" rel="tooltip" title="" class="btn btn-info btn-round btn-icon btn-icon-mini btn-neutral" data-original-title="Edit Task">
-                  <i class="now-ui-icons ui-2_settings-90"></i>
-                  </button>
-                  <button type="button" rel="tooltip" title="" class="btn btn-danger btn-round btn-icon btn-icon-mini btn-neutral" data-original-title="Remove">
-                  <i class="now-ui-icons ui-1_simple-remove"></i>
-                  </button>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="form-check">
-                    <label class="form-check-label">
-                    <input class="form-check-input" type="checkbox" checked>
-                    <span class="form-check-sign"></span>
-                    </label>
-                  </div>
-                </td>
-                <td class="text-left">Texto
-                </td>
-                <td class="td-actions text-right">
-                  <button type="button" rel="tooltip" title="" class="btn btn-info btn-round btn-icon btn-icon-mini btn-neutral" data-original-title="Edit Task">
-                  <i class="now-ui-icons ui-2_settings-90"></i>
-                  </button>
-                  <button type="button" rel="tooltip" title="" class="btn btn-danger btn-round btn-icon btn-icon-mini btn-neutral" data-original-title="Remove">
-                  <i class="now-ui-icons ui-1_simple-remove"></i>
-                  </button>
-                </td>
-              </tr>
+              <% historics.forEach(function(historic) {  %>
+                <tr>
+                  <td>
+                    <%= (historic.startDate==null) ? "Não registrado" : historic.startDate.toLocaleString('pt-BR', { hour12: false }) %>
+                  </td>
+                  <td>
+                    <%= (historic.endDate==null) ? "Não registrado" : historic.endDate.toLocaleString('pt-BR', { hour12: false }) %>
+                  </td>
+                  <td>
+                    <%= historic.section %>
+                  </td>
+                  <td class="text-right <%= historic.error ? "text-danger" : "text-success" %>">
+                    <% if (historic.error) { %>
+                      <b>Erro</b>
+                    <% } else if (historic.error == false && historic.endDate==null) { %>
+                      <b>Andamento</b>
+                    <% } else if (historic.error == false) { %>
+                      <b>Completo</b>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }); %>
             </tbody>
           </table>
         </div>

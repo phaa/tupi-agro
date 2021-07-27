@@ -2,10 +2,7 @@ const mongoose = require('mongoose');
 const HistoricSchema = new mongoose.Schema({
     startDate: { type: Date },
     endDate: { type: Date },
-    scheduling: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Scheduling',
-    },
+    section: { type: Number },
     error: { type: Boolean }
 });
 

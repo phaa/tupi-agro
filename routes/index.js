@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
-const Rule = require("../models/greenhouse-rules");
 const Scheduling = require("../models/scheduling");
+const Historic = require("../models/irrigation-historic");
 
 const { ensureAuthenticated } = require("../config/auth.js");
 
@@ -20,21 +20,24 @@ router.get('/register', (req, res) => {
 /**
  * Página inicial
  */
-router.get('/inicio', ensureAuthenticated, (req, res) => {
-  Scheduling.find({}).sort({executeOn: 'ascending'}).exec((err, schedules) => {
-    let schedulingsMap = [];
-    let historicsMap = [];
+router.get('/inicio', ensureAuthenticated, async (req, res) => {
+  let schedulingsMap = [];
+  const schedules = await Scheduling.find({}).sort({executeOn: 'ascending'}).exec();
+  schedules.forEach(schedule => {
+    schedulingsMap.push(schedule)
+  });
 
-    schedules.forEach(schedule => {
-      schedulingsMap.push(schedule)
-      
-    });
+  let historicsMap = [];
+  const historics = await Historic.find({}).sort({executeOn: 'ascending'}).populate("scheduling").exec();
+  historics.forEach(historic => {
+    historicsMap.push(historic);
+  });
 
-    res.render('inicio', {
-      user: req.user,
-      schedulings: schedules,
-      title: 'inicio',
-    });
+  res.render('inicio', {
+    user: req.user,
+    title: 'inicio',
+    schedulings: schedulingsMap,
+    historics: historicsMap,
   });
   
 });
@@ -66,6 +69,7 @@ router.get('/inicio/del_horario/:id', ensureAuthenticated, (req, res) => {
 
 /**
  * Monitoramento
+ * Serão apenas os gráficos dos dados de ambiente
  */
 router.get('/monitoramento', ensureAuthenticated, (req, res) => {
   res.render('monitoramento',{
@@ -74,14 +78,16 @@ router.get('/monitoramento', ensureAuthenticated, (req, res) => {
   });
 });
 
-router.get('/regras', ensureAuthenticated, (req, res) => {
-  Rule.find({}, (err, rules) => {
-    console.log(req.user)
-    res.render('regras',{
-      user: req.user,
-      title: 'regras',
-      rules: rules
-    });
+
+/**
+ * Controles
+ * Controles de liga e desliga de cada seção de irrigação
+ * "Eu posso importar o board controller aqui e usar os metodos dele"
+ */
+router.get('/controles', ensureAuthenticated, (req, res) => {
+  res.render('controles',{
+    user: req.user,
+    title: 'controles',
   });
   
 });

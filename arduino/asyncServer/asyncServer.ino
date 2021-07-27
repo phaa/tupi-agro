@@ -3,6 +3,7 @@
 #include "ESPAsyncWebServer.h"
 #include "AsyncJson.h"
 #include "ArduinoJson.h"
+#include <Preferences.h>
 #include "dht.h"
 #include <LiquidCrystal_I2C.h>
 
@@ -31,6 +32,7 @@ const char* ssid = "Tupi";
 const char* password =  "12345678";
 
 AsyncWebServer server(80);
+Preferences preferences;
 dht DHT;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 short lcdState = 0;
@@ -39,9 +41,9 @@ short lcdState = 0;
 byte pumpState = LOW;
 byte exaustingState = LOW;
 byte fertirrigationState = LOW;
-bool automaticIrrigation = true;
-bool automaticExausting = true;
-bool automaticFertirrigation = true;
+bool automaticIrrigation;
+bool automaticExausting;
+bool automaticFertirrigation;
 
 // Contador de tempo
 unsigned long counter1s = 0;
@@ -53,9 +55,17 @@ short airTemperature = 0;
 short soilMoisture = 0;
 
 void setup() {
+  // Configuração dos relés
   pinMode(PUMP_RELAY_PIN, OUTPUT);
   pinMode(EXAUST_RELAY_PIN, OUTPUT);
 
+  // Buscar dados da armazenagem
+  preferences.begin("bomba", false);
+  automaticIrrigation = preferences.getBool("ai", false);
+  automaticExausting = preferences.getBool("ae", false);
+  automaticFertirrigation = preferences.getBool("af", false);
+
+  // Inicialização do LCD
   lcd.init();
   lcd.setBacklight(HIGH);
   lcdPrint(0, 0, "Tupi Agro");
@@ -65,8 +75,8 @@ void setup() {
     Serial.begin(115200);
   #endif
 
+  // WiFi
   WiFi.begin(ssid, password);
-
   DEBUG_PRINTLN("Conectando ao WiFi..");
   lcdPrint(0, 1, "Conectando WiFi...");
   while (WiFi.status() != WL_CONNECTED) {
@@ -74,27 +84,16 @@ void setup() {
     DEBUG_PRINT(".");
   }
   DEBUG_PRINTLN("");
-
   DEBUG_PRINTLN(WiFi.localIP());
   DEBUG_PRINTLN(WiFi.macAddress());
 
+  // Configuração das rotas do servidor
+  server.on("/check", HTTP_GET, [](AsyncWebServerRequest * request) {
+    request->send(200);
+  });
+  
   server.on("/greenhouse", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncResponseStream *response = request->beginResponseStream("application/json");
-    /*
-      DynamicJsonDocument greenhouseStats(1024);
-
-      greenhouseStats["pumpState"] = pumpState;
-      greenhouseStats["automaticIrrigation"] = automaticIrrigation;
-      greenhouseStats["exaustingState"] = exaustingState;
-      greenhouseStats["automaticExausting"] = automaticExausting;
-      greenhouseStats["fertirrigationState"] = fertirrigationState;
-      greenhouseStats["automaticFertirrigation"] = automaticFertirrigation;
-      greenhouseStats["airHumidity"] = airHumidity;
-      greenhouseStats["airTemperature"] = airTemperature;
-      greenhouseStats["soilMoisture"] = soilMoisture;
-
-      serializeJson(greenhouseStats, *response);
-    */
     serializeGreenhouseStats(response);
     DEBUG_PRINTLN(ESP.getFreeHeap());
     request->send(response);
@@ -110,7 +109,7 @@ void setup() {
     if (request->hasParam("pump")) {
       String pumpParam = request->getParam("pump")->value();
 
-      if (automaticIrrigation == LOW) {
+      if (automaticIrrigation == HIGH) {
         err++;
       } else {
         pumpState = (pumpParam.toInt()) ? HIGH : LOW;
@@ -122,7 +121,7 @@ void setup() {
     if (request->hasParam("exaust")) {
       String exaustParam = request->getParam("exaust")->value();
 
-      if (automaticExausting == LOW) {
+      if (automaticExausting == HIGH) {
         err++;
       } else {
         exaustingState = (exaustParam.toInt()) ? HIGH : LOW;
@@ -134,7 +133,7 @@ void setup() {
     if (request->hasParam("fertirrigation")) {
       String fertirrigationParam = request->getParam("fertirrigation")->value();
 
-      if (automaticExausting == LOW) {
+      if (automaticExausting == HIGH) {
         err++;
       } else {
         fertirrigationState = (fertirrigationParam.toInt()) ? HIGH : LOW;
@@ -146,6 +145,7 @@ void setup() {
     if (request->hasParam("automaticIrrigation")) {
       String iaParam = request->getParam("automaticIrrigation")->value();
       automaticIrrigation = (iaParam.toInt()) ? true : false;
+      preferences.putBool("ai", automaticIrrigation);
       DEBUG_PRINT("IA: ");
       DEBUG_PRINTLN(automaticIrrigation);
     }
@@ -153,6 +153,7 @@ void setup() {
     if (request->hasParam("automaticExausting")) {
       String iaParam = request->getParam("automaticExausting")->value();
       automaticExausting = (iaParam.toInt()) ? true : false;
+      preferences.putBool("ae", automaticExausting);
       DEBUG_PRINT("EA: ");
       DEBUG_PRINTLN(automaticExausting);
     }
@@ -160,11 +161,10 @@ void setup() {
     if (request->hasParam("automaticFertirrigation")) {
       String iaParam = request->getParam("automaticFertirrigation")->value();
       automaticFertirrigation = (iaParam.toInt()) ? true : false;
+      preferences.putBool("af", automaticFertirrigation);
       DEBUG_PRINT("FA: ");
       DEBUG_PRINTLN(automaticFertirrigation);
     }
-
-    // if err > 0 { denyChange() }
 
     if(err > 0) {
       DynamicJsonDocument status(30);
@@ -175,12 +175,11 @@ void setup() {
     } else {
       serializeGreenhouseStats(response);
     }
-
     
     request->send(response);
   });
 
-  // CORS
+  // Autoriza o CORS
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
   server.begin();
 
