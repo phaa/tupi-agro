@@ -3,6 +3,7 @@ const router = express.Router();
 
 const Scheduling = require("../models/scheduling");
 const Historic = require("../models/irrigation-historic");
+const Tools = require("../config/tools");
 
 const { ensureAuthenticated } = require("../config/auth.js");
 
@@ -46,8 +47,8 @@ router.post('/inicio', ensureAuthenticated, (req, res) => {
   const { time1, time2, section } = req.body;
 
   const newScheduling = new Scheduling({
-    executeOn: time1+":00",
-    stopOn: time2+":00",
+    executeOn: Tools.timeStringToDatabase(time1+":00"),
+    stopOn: Tools.timeStringToDatabase(time2+":00"),
     active: false,
     section: section,
   });

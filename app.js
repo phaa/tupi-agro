@@ -105,7 +105,7 @@ async function main() {
   await mongoStarter.connect('pedro', 'mclaren2018', 'estufas');
   
   // Encapsulador da comunicação entre o servidor e a MCU
-  boardController.begin();
+  //boardController.begin();
   boardController.beginSchedulingLoop();
   
   // Configuraçâo das views 

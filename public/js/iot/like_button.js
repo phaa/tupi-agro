@@ -67,7 +67,7 @@ class ControlsManager extends React.Component {
   }
 
   getGreenhouseData() {
-    axios.get(`http://192.168.0.144/greenhouse`)
+    axios.get(`http://192.168.0.144/irrigationstatus`)
       .then(res => {
         this.unpackGreenhouseData(res.data);
         document.body.classList.add('loaded');

@@ -1,21 +1,13 @@
 const axios = require('axios');
 const Scheduling = require("../models/scheduling");
 const Historic = require("../models/irrigation-historic");
+const Tools = require("../config/tools");
 
 class BoardController {
 
   constructor() { 
     this.loop = this.loop.bind(this);
     this.ip = "192.168.0.144";
-  }
-
-  async begin() {
-    const refreshTime = 30;
-    setInterval(async () => {
-      const response = await axios.get("http://"+ this.ip +"/greenhouse");
-      console.log("30 min, hora do DB: " + response.data);
-    }, 1000 * 60 * refreshTime);
-    console.log("Setou o interval");
   }
 
   async beginSchedulingLoop() {
@@ -38,18 +30,20 @@ class BoardController {
 
   async loop() {
     let now = new Date();
-    console.log(`Agora: ${now}`)
     now.setSeconds(0); // Ignora os segundos
-    const nowString = now.toLocaleString().slice(11); // pega só o trecho da data
+    console.log(`Agora: ${now}`);
 
+    const nowTime = Tools.timeStringToDatabase(now.toLocaleString().slice(11)); // pega só o trecho da data
+
+    /* Substituir o check de erros no envio
     const response = await axios.get("http://"+ this.ip +"/check");
 
     if(response.status != 200) {
       return;
     }
+    */
 
-
-    const entryScheduling = await Scheduling.findOne({ executeOn: nowString }).exec();
+    const entryScheduling = await Scheduling.findOne({ executeOn: nowTime }).exec();
     // or if scheduling has an error. So try again
 
     if(entryScheduling) {
@@ -60,13 +54,13 @@ class BoardController {
       });
 
       const now = new Date();
-      if (await this.turnPump(1, entryScheduling.section)) {
-        console.log("Entry historic deu certo")
+      if (await this.sendCommand(1, entryScheduling.section)) {
+        console.log("Entry historic deu certo");
         entryScheduling.active = true;
         historic.startDate = now;
       }
       else {
-        console.log("Entry historic deu errado")
+        console.log("Entry historic deu errado");
         historic.startDate = null;
         historic.endDate = null;
         historic.error = true;
@@ -80,54 +74,62 @@ class BoardController {
       }
     }
 
-    const endScheduling = await Scheduling.findOne({ stopOn: nowString }).exec();
+    const endSchedulings = await Scheduling.find({ 
+      $and: [
+        // Agendamento ativo E ($and) que já passou do tempo ou está na hora de desativar (<=)
+        { stopOn: { $lte: nowTime } }, 
+        { active: true }
+      ]}).exec();
 
-    if(endScheduling) {
-      console.log(`Encontrou end: ${endScheduling.stopOn}`)
-      let historic = await Historic.findOne({}).sort({'_id': -1}).exec();
-      console.log(`Encontrou historic: ${historic}`)
+    if(endSchedulings) {
+      for (let endScheduling of endSchedulings) {
+        console.log(`EndScheduling: ${endScheduling.stopOn}`);
+        let historic = await Historic.findOne({}).sort({'_id': -1}).exec();
+        console.log(`Encontrou historic: ${historic}`);
 
-      if (historic.error==true) {
-        console.log("Erro no end")
-        return;
-      }
+        if (historic.error == true) {
+          console.log("Irrigação já teve erro antes");
+          return;
+        }
 
-      console.log("Passou do if")
+        console.log("Sem erros no histórico");
 
-      if (await this.turnPump(0, endScheduling.section)) {
-        console.log("End historic deu certo")
-        historic.endDate = new Date();
-        endScheduling.active = false;
-      }
-      else {
-        console.log("End historic deu errado")
-        historic.error = true;
-      }
+        if (await this.sendCommand(0, endScheduling.section)) {
+          console.log("End historic deu certo");
+          historic.endDate = new Date();
+          endScheduling.active = false;
+        }
+        else {
+          console.log("End historic deu errado");
+          historic.error = true;
+        }
 
-      try {
-        await endScheduling.save();
-        await historic.save();
-      } catch (error) {
-        console.log(error);
+        try {
+          await endScheduling.save();
+          await historic.save();
+        } catch (error) {
+          console.log(error);
+        }
       }
     }
   }
 
-  async turnPump(mode, section) {
-
+  async sendCommand(mode, section) {
     try {
       let response = await axios.get("http://"+ this.ip +`/command?pump=${ mode }&section=${ section }`);
       if (response.status == 200) {
-        console.log("Enviou")
-        return true;
-        
+        if (response.data.manual > 0) {
+          console.log("Enviou");
+          return true;
+        } else {
+          console.log("Operação não permitida pela MCU");
+          return false;
+        }
       } 
     }
     catch (err) {
-      if (err || response.data.error == "forbidden") {
-        console.log("Erro")
-        return false;
-      }
+      console.log("Erro no envio");
+      return false;
     }
   }
 }
