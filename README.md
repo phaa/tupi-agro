@@ -1,14 +1,14 @@
 # Tupi Agro
-Projeto com a finalidade de gerenciar parâmetros de umidade, temperatura, pH do solo, e fertirrigaḉão através de microcontroladores instalados em estufas de produção de pimentão colorido.
+Project with the purpose of managing humidity, temperature, soil pH, and fertigation parameters through microcontrollers installed in greenhouses for the production of colored peppers.
 
 # API
-O projeto web consiste em uma API desenvolvida em Nodejs e Express. Conta com sistema de autenticação, dashboard, agendamento de horários e modo de operação autônomo ou seja liga e desliga os atuadores da estufa com base em parâmetros pré-estabelecidos.
+The web project consists of an API developed in Nodejs and Express. It has an authentication system, dashboard, scheduling, and autonomous operation mode, i.e., it turns the greenhouse actuators on and off based on pre-established parameters.
 
 # IoT
-Esse projeto funciona em conjunto com um sistema de IoT em C++ e arduino, o qual é responsável pela coleta e envio dos dados.
+This project works in conjunction with an IoT system in C++ and Arduino, which is responsible for collecting and sending data.
 
-Para esse projeto fiz vários testes e estudos sobre as melhores bibliotecas e práticas para a transmissão de dados em estufas e, assim, optei por utilizar conexões Ethernet que são mais estáveis e leves para implementar em pequenos módulos arduino. 
-Antes o projeto utilizava um ESP32, entretanto, por ele operar em uma tensão de 3.3v, acarretou em incompatibilidade com muitos dos módulos que haviam disponíveis no mercado brasileiro.
+For this project, I performed several tests and studies on the best libraries and practices for data transmission in greenhouses and, therefore, I chose to use Ethernet connections that are more stable and lightweight to implement in small Arduino modules.
 
-Os projetos do Arduino estão todos na pasta com mesmo nome. 
+Previously, the project used an ESP32, however, because it operates at a voltage of 3.3V, it resulted in incompatibility with many of the modules that were available on the Brazilian market.
 
+The Arduino projects are all in the folder with the same name.
